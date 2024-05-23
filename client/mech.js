@@ -12,7 +12,7 @@
   function emit($item, item) {
     return $item.append(`
       <p style="background-color:#eee;padding:15px;">
-        ${expand(item.text)}
+        ${expand(item.text)} 😀
       </p>`)
   }
 

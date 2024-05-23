@@ -1,0 +1,37 @@
+{
+  "title": "About Mech Plugin",
+  "story": [
+  {
+    "type": "paragraph",
+    "id": "א3כגב82ד962הוזךו",
+    "text": "Here we describe the purpose of the plugin and include a sample."
+  },
+  {
+    "type": "mech",
+    "id": "7אb2טיאבef9ד27ac",
+    "text": "This is text in the new plugin. You can *double-click* to edit it too."
+  }
+],
+  "journal": [
+  {
+    "type": "create",
+    "item": {
+      "title": "About Mech Plugin",
+      "story": [
+  {
+    "type": "paragraph",
+    "id": "א3כגב82ד962הוזךו",
+    "text": "Here we describe the purpose of the plugin and include a sample."
+  },
+  {
+    "type": "mech",
+    "id": "7אb2טיאבef9ד27ac",
+    "text": "This is text in the new plugin. You can *double-click* to edit it too."
+  }
+]
+    },
+    "date": 1716488666000,
+    "certificate": "from mkplugin.sh"
+  }
+]
+}

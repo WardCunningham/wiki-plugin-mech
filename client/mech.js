@@ -16,7 +16,7 @@
       let spaces = m[1].length
       let command = m[2]
       if (spaces == indent) {
-        here.push(command)
+        here.push({command})
         lines.shift()
       } else if (spaces > indent) {
         var more = []
@@ -37,8 +37,8 @@
         const key = `${unique}.${path.join('.')}`
         index[key] = part
         part.key = key
-        if(typeof part == 'string')
-          html.push(`<span id=${key}>${expand(part.trim())}</span>`)
+        if(part.command)
+          html.push(`<span id=${key}>${expand(part.command)}</span>`)
         else
           html.push(`<div id=${key} style="padding-left:15px">${block(part,[...path,0])}</div>  `)
         path[path.length-1]++
@@ -69,9 +69,9 @@
   function run (nest, index) {
     console.log({nest,index})
     for (const [key,code] of Object.entries(index)) {
-      if(typeof code == 'string') {
+      if(code.command) {
         const elem = document.getElementById(key)
-        const [op, ...args] = code.split(/ +/)
+        const [op, ...args] = code.command.split(/ +/)
         blocks[op].emit.apply(null,[elem])
       }
     }

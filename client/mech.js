@@ -54,8 +54,9 @@
   function click_bind (elem) {
   }
 
-  function hello_emit (elem) {
-    elem.innerHTML += ' 😀'
+  function hello_emit (elem,what) {
+    const want = what == 'world' ? ' 🌎' : ' 😀'
+    elem.innerHTML += want
   }
 
   function hello_bind (elem) {
@@ -72,7 +73,8 @@
       if(code.command) {
         const elem = document.getElementById(key)
         const [op, ...args] = code.command.split(/ +/)
-        blocks[op].emit.apply(null,[elem])
+        console.log({op,args})
+        blocks[op].emit.apply(null,[elem,...args])
       }
     }
   }

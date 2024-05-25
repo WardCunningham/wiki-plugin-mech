@@ -34,7 +34,7 @@
     const block = (more,path) => {
       const html = []
       for (part of more) {
-        const key = `K${unique}P${path.join('.')}`
+        const key = `${unique}.${path.join('.')}`
         index[key] = part
         part.key = key
         if(typeof part == 'string')
@@ -48,19 +48,42 @@
     return block(nest,[0])
   }
 
+  function click_emit (elem) {
+  }
+
+  function click_bind (elem) {
+  }
+
+  function hello_emit (elem) {
+    elem.innerHTML += ' 😀'
+  }
+
+  function hello_bind (elem) {
+  }
+
+  const blocks = {
+    CLICK: {emit:click_emit, bind:click_bind},
+    HELLO: {emit:hello_emit, bind:hello_bind}
+  }
+
+  function run (nest, index) {
+    console.log({nest,index})
+    for (const [key,code] of Object.entries(index)) {
+      if(typeof code == 'string') {
+        const elem = document.getElementById(key)
+        const [op, ...args] = code.split(/ +/)
+        blocks[op].emit.apply(null,[elem])
+      }
+    }
+  }
 
   function emit($item, item) {
     const lines = item.text.split(/\n/)
     const nest = tree(lines,[],0)
     const index = {}
-    $item.append(`
-      <div style="background-color:#eee;padding:15px;border-top:8px;">${format(nest,index)}</div>`)
-    console.log({nest,index,entries:Object.entries(index)})
-    const happy = Object.entries(index)
-      .filter(([k,v]) => (typeof v == 'string') && v.match(/HELLO/))
-      .map(([k,v]) => document.getElementById(k))
-    happy.forEach(elem => elem.innerHTML += ' 😀')
-    console.log({happy})
+    const html = format(nest,index)
+    $item.append(`<div style="background-color:#eee;padding:15px;border-top:8px;">${html}</div>`)
+    run(nest,index)
   }
 
   function bind($item, item) {

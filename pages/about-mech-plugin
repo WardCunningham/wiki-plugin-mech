@@ -1,37 +1,325 @@
 {
   "title": "About Mech Plugin",
   "story": [
-  {
-    "type": "paragraph",
-    "id": "à3ëâá82ã962äåæêå",
-    "text": "Here we describe the purpose of the plugin and include a sample."
-  },
-  {
-    "type": "mech",
-    "id": "7àb2èéàáef9ã27ac",
-    "text": "This is text in the new plugin. You can *double-click* to edit it too."
-  }
-],
-  "journal": [
-  {
-    "type": "create",
-    "item": {
-      "title": "About Mech Plugin",
-      "story": [
-  {
-    "type": "paragraph",
-    "id": "à3ëâá82ã962äåæêå",
-    "text": "Here we describe the purpose of the plugin and include a sample."
-  },
-  {
-    "type": "mech",
-    "id": "7àb2èéàáef9ã27ac",
-    "text": "This is text in the new plugin. You can *double-click* to edit it too."
-  }
-]
+    {
+      "type": "paragraph",
+      "id": "ï¿½3ï¿½ï¿½ï¿½82ï¿½962ï¿½ï¿½ï¿½ï¿½ï¿½",
+      "text": "The Mech plugin allows one to script interactive mechanisms in the style of block languages like Squeak. We use capitalized keywords for blocks and indent them with spaces to show where blocks nest within others."
     },
-    "date": 1716488666000,
-    "certificate": "from mkplugin.sh"
-  }
-]
+    {
+      "type": "paragraph",
+      "id": "aadc413ae00c5c37",
+      "text": "Say \"HELLO\" for a friendly greating."
+    },
+    {
+      "type": "mech",
+      "id": "7d0dcd7919c2f899",
+      "text": "HELLO",
+      "alias": "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac"
+    },
+    {
+      "type": "paragraph",
+      "id": "567acaf3531aa3ea",
+      "text": "Say \"HELLO world\" to great the whole world."
+    },
+    {
+      "type": "mech",
+      "id": "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac",
+      "text": "HELLO world"
+    },
+    {
+      "type": "paragraph",
+      "id": "9e56be61e4552e9a",
+      "text": "Say \"CLICK\" to run indented commands only when clicked."
+    },
+    {
+      "type": "mech",
+      "id": "0223ec356575839a",
+      "text": "CLICK\n  HELLO\n  HELLO world",
+      "alias": "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac"
+    },
+    {
+      "type": "paragraph",
+      "id": "0da4de7b855c9a0d",
+      "text": "CLICK expects to be followed with indented commands and will complain if it doesn't find any."
+    },
+    {
+      "type": "mech",
+      "id": "9a40751dd94dfb43",
+      "text": "CLICK\nHELLO",
+      "alias": "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac"
+    },
+    {
+      "type": "paragraph",
+      "id": "d22aa70fbdde7da0",
+      "text": "See the [[Catalog of Mech Blocks]] for more ideas."
+    }
+  ],
+  "journal": [
+    {
+      "type": "create",
+      "item": {
+        "title": "About Mech Plugin",
+        "story": [
+          {
+            "type": "paragraph",
+            "id": "ï¿½3ï¿½ï¿½ï¿½82ï¿½962ï¿½ï¿½ï¿½ï¿½ï¿½",
+            "text": "Here we describe the purpose of the plugin and include a sample."
+          },
+          {
+            "type": "mech",
+            "id": "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac",
+            "text": "This is text in the new plugin. You can *double-click* to edit it too."
+          }
+        ]
+      },
+      "date": 1716488666000,
+      "certificate": "from mkplugin.sh"
+    },
+    {
+      "type": "edit",
+      "id": "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac",
+      "item": {
+        "type": "mech",
+        "id": "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac",
+        "text": "HELLO"
+      },
+      "date": 1716683838652
+    },
+    {
+      "type": "edit",
+      "id": "ï¿½3ï¿½ï¿½ï¿½82ï¿½962ï¿½ï¿½ï¿½ï¿½ï¿½",
+      "item": {
+        "type": "paragraph",
+        "id": "ï¿½3ï¿½ï¿½ï¿½82ï¿½962ï¿½ï¿½ï¿½ï¿½ï¿½",
+        "text": "The Mech plugin allows one to script interactive mechanisms in the style of block languages like Squeak. We use capitalized keywords for blocks and indent them with spaces to show where blocks nest within others."
+      },
+      "date": 1716684272077
+    },
+    {
+      "type": "add",
+      "id": "d22aa70fbdde7da0",
+      "item": {
+        "type": "paragraph",
+        "id": "d22aa70fbdde7da0",
+        "text": "See the [[Catalog of Mech Blocks]]"
+      },
+      "after": "ï¿½3ï¿½ï¿½ï¿½82ï¿½962ï¿½ï¿½ï¿½ï¿½ï¿½",
+      "date": 1716684321178
+    },
+    {
+      "type": "edit",
+      "id": "d22aa70fbdde7da0",
+      "item": {
+        "type": "paragraph",
+        "id": "d22aa70fbdde7da0",
+        "text": "See the [[Catalog of Mech Blocks]] for more ideas."
+      },
+      "date": 1716684349332
+    },
+    {
+      "type": "add",
+      "id": "aadc413ae00c5c37",
+      "item": {
+        "type": "paragraph",
+        "id": "aadc413ae00c5c37",
+        "text": "Say HELLO for a friendly greating."
+      },
+      "after": "ï¿½3ï¿½ï¿½ï¿½82ï¿½962ï¿½ï¿½ï¿½ï¿½ï¿½",
+      "date": 1716684398273
+    },
+    {
+      "id": "7d0dcd7919c2f899",
+      "type": "add",
+      "item": {
+        "type": "mech",
+        "id": "7d0dcd7919c2f899",
+        "text": "HELLO",
+        "alias": "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac"
+      },
+      "after": "aadc413ae00c5c37",
+      "date": 1716684414784
+    },
+    {
+      "item": {
+        "type": "factory",
+        "id": "567acaf3531aa3ea"
+      },
+      "id": "567acaf3531aa3ea",
+      "type": "add",
+      "after": "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac",
+      "date": 1716684474280
+    },
+    {
+      "type": "edit",
+      "id": "567acaf3531aa3ea",
+      "item": {
+        "type": "paragraph",
+        "id": "567acaf3531aa3ea",
+        "text": "Say HELLO world to great the whole world."
+      },
+      "date": 1716684507788
+    },
+    {
+      "id": "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac",
+      "type": "move",
+      "order": [
+        "ï¿½3ï¿½ï¿½ï¿½82ï¿½962ï¿½ï¿½ï¿½ï¿½ï¿½",
+        "aadc413ae00c5c37",
+        "7d0dcd7919c2f899",
+        "d22aa70fbdde7da0",
+        "567acaf3531aa3ea",
+        "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac"
+      ],
+      "date": 1716684514976
+    },
+    {
+      "type": "edit",
+      "id": "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac",
+      "item": {
+        "type": "mech",
+        "id": "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac",
+        "text": "HELLO world"
+      },
+      "date": 1716684519493
+    },
+    {
+      "type": "edit",
+      "id": "aadc413ae00c5c37",
+      "item": {
+        "type": "paragraph",
+        "id": "aadc413ae00c5c37",
+        "text": "Say \"HELLO\" for a friendly greating."
+      },
+      "date": 1716684535093
+    },
+    {
+      "type": "edit",
+      "id": "567acaf3531aa3ea",
+      "item": {
+        "type": "paragraph",
+        "id": "567acaf3531aa3ea",
+        "text": "Say \"HELLO world\" to great the whole world."
+      },
+      "date": 1716684544028
+    },
+    {
+      "item": {
+        "type": "factory",
+        "id": "9e56be61e4552e9a"
+      },
+      "id": "9e56be61e4552e9a",
+      "type": "add",
+      "after": "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac",
+      "date": 1716684568232
+    },
+    {
+      "type": "edit",
+      "id": "9e56be61e4552e9a",
+      "item": {
+        "type": "paragraph",
+        "id": "9e56be61e4552e9a",
+        "text": "Say \"CLICK\" to run indented commands only when clicked."
+      },
+      "date": 1716684595412
+    },
+    {
+      "id": "0223ec356575839a",
+      "type": "add",
+      "item": {
+        "type": "mech",
+        "id": "0223ec356575839a",
+        "text": "HELLO",
+        "alias": "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac"
+      },
+      "after": "9e56be61e4552e9a",
+      "date": 1716684601922
+    },
+    {
+      "type": "edit",
+      "id": "0223ec356575839a",
+      "item": {
+        "type": "mech",
+        "id": "0223ec356575839a",
+        "text": "CLICK\n  HELLO\n  HELLO world",
+        "alias": "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac"
+      },
+      "date": 1716684627691
+    },
+    {
+      "id": "d22aa70fbdde7da0",
+      "type": "move",
+      "order": [
+        "ï¿½3ï¿½ï¿½ï¿½82ï¿½962ï¿½ï¿½ï¿½ï¿½ï¿½",
+        "aadc413ae00c5c37",
+        "7d0dcd7919c2f899",
+        "567acaf3531aa3ea",
+        "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac",
+        "9e56be61e4552e9a",
+        "0223ec356575839a",
+        "d22aa70fbdde7da0"
+      ],
+      "date": 1716684663443
+    },
+    {
+      "type": "add",
+      "id": "0da4de7b855c9a0d",
+      "item": {
+        "type": "paragraph",
+        "id": "0da4de7b855c9a0d",
+        "text": "CLICK expects to be followed with indented commands and will complain if it doesn't find any. Hover for the error message."
+      },
+      "after": "9e56be61e4552e9a",
+      "date": 1716684726522
+    },
+    {
+      "type": "edit",
+      "id": "0da4de7b855c9a0d",
+      "item": {
+        "type": "paragraph",
+        "id": "0da4de7b855c9a0d",
+        "text": "CLICK expects to be followed with indented commands and will complain if it doesn't find any."
+      },
+      "date": 1716684736166
+    },
+    {
+      "id": "0da4de7b855c9a0d",
+      "type": "move",
+      "order": [
+        "ï¿½3ï¿½ï¿½ï¿½82ï¿½962ï¿½ï¿½ï¿½ï¿½ï¿½",
+        "aadc413ae00c5c37",
+        "7d0dcd7919c2f899",
+        "567acaf3531aa3ea",
+        "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac",
+        "9e56be61e4552e9a",
+        "0223ec356575839a",
+        "0da4de7b855c9a0d",
+        "d22aa70fbdde7da0"
+      ],
+      "date": 1716684740993
+    },
+    {
+      "id": "9a40751dd94dfb43",
+      "type": "add",
+      "item": {
+        "type": "mech",
+        "id": "9a40751dd94dfb43",
+        "text": "HELLO",
+        "alias": "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac"
+      },
+      "after": "0da4de7b855c9a0d",
+      "date": 1716684744388
+    },
+    {
+      "type": "edit",
+      "id": "9a40751dd94dfb43",
+      "item": {
+        "type": "mech",
+        "id": "9a40751dd94dfb43",
+        "text": "CLICK\nHELLO",
+        "alias": "7ï¿½b2ï¿½ï¿½ï¿½ï¿½ef9ï¿½27ac"
+      },
+      "date": 1716684753588
+    }
+  ]
 }

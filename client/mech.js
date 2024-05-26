@@ -49,10 +49,20 @@
   }
 
   function click_emit (elem) {
+    const body = this
+    console.log({body,elem})
+    if (!body.length && !elem.innerHTML.match(/button/)) {
+      console.log('trouble')
+      elem.innerHTML += '<button style="border-width:0;color:red;" title="nothing to run">✖︎</button>'
+    } else
+    if (!elem.innerHTML.match(/button/)) {
+      elem.innerHTML += '<button style="border-width:0;">◉</button>'
+      elem.querySelector('button').addEventListener('click',event => run(this))
+    }
   }
 
   function click_bind (elem) {
-  }
+  }  
 
   function hello_emit (elem,what) {
     const want = what == 'world' ? ' 🌎' : ' 😀'
@@ -67,14 +77,19 @@
     HELLO: {emit:hello_emit, bind:hello_bind}
   }
 
-  function run (nest, index) {
-    console.log({nest,index})
-    for (const [key,code] of Object.entries(index)) {
-      if(code.command) {
-        const elem = document.getElementById(key)
+  function run (nest) {
+    console.log({nest})
+    const scope = nest.slice()
+    while (scope.length) {
+      const code = scope.shift()
+      if (code.command) {
+        const elem = document.getElementById(code.key)
         const [op, ...args] = code.command.split(/ +/)
-        console.log({op,args})
-        blocks[op].emit.apply(null,[elem,...args])
+        const more = scope[0]?.command ? null : scope.shift()
+        console.log({op,args,more})
+        blocks[op].emit.apply(more||[],[elem,...args])        
+      } else {
+        run(code)
       }
     }
   }

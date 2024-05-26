@@ -1,17 +1,19 @@
 {
   "name": "wiki-plugin-mech",
   "version": "0.1.0",
-  "description": "Federated Wiki - Mech Plugin",
+  "description": "Federated Wiki - Mechanism Scripting Plugin",
   "keywords": [
     "mech",
+    "mechansim",
+    "scripting",
     "wiki",
     "federated wiki",
     "plugin"
   ],
   "author": {
-    "name": "Your Name",
-    "email": "you@example.com",
-    "url": "http://example.com"
+    "name": "Ward Cunningham",
+    "email": "ward@c2.com",
+    "url": "https://c2.com/ward"
   },
   "contributors": [],
   "scripts": {
@@ -29,10 +31,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/fedwiki/wiki-plugin-mech.git"
+    "url": "https://github.com/wardcunningham/wiki-plugin-mech.git"
   },
   "bugs": {
-    "url": "https://github.com/fedwiki/wiki-plugin-mech/issues"
+    "url": "https://github.com/wardcunningham/wiki-plugin-mech/issues"
   },
   "engines": {
     "node": ">=0.10"

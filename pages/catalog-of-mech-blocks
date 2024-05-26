@@ -1,0 +1,55 @@
+{
+  "title": "Catalog of Mech Blocks",
+  "story": [
+    {
+      "type": "paragraph",
+      "id": "2802ed0bdf73bd98",
+      "text": "Our work here is just beginning."
+    },
+    {
+      "type": "paragraph",
+      "id": "fc6c61ba9968734b",
+      "text": "There are no more blocks yet other than CLICK and HELLO."
+    }
+  ],
+  "journal": [
+    {
+      "type": "create",
+      "item": {
+        "title": "Catalog of Mech Blocks",
+        "story": []
+      },
+      "date": 1716684800514
+    },
+    {
+      "item": {
+        "type": "factory",
+        "id": "2802ed0bdf73bd98"
+      },
+      "id": "2802ed0bdf73bd98",
+      "type": "add",
+      "date": 1716684802651
+    },
+    {
+      "type": "edit",
+      "id": "2802ed0bdf73bd98",
+      "item": {
+        "type": "paragraph",
+        "id": "2802ed0bdf73bd98",
+        "text": "Our work here is just beginning."
+      },
+      "date": 1716684821373
+    },
+    {
+      "type": "add",
+      "id": "fc6c61ba9968734b",
+      "item": {
+        "type": "paragraph",
+        "id": "fc6c61ba9968734b",
+        "text": "There are no more blocks yet other than CLICK and HELLO."
+      },
+      "after": "2802ed0bdf73bd98",
+      "date": 1716684839583
+    }
+  ]
+}

@@ -29,13 +29,12 @@
     return here
   }
 
-  function format(nest,index) {
+  function format(nest) {
     const unique = Math.floor(Math.random()*1000000)
     const block = (more,path) => {
       const html = []
       for (part of more) {
         const key = `${unique}.${path.join('.')}`
-        index[key] = part
         part.key = key
         if(part.command)
           html.push(`<span id=${key}>${expand(part.command)}</span>`)
@@ -92,7 +91,7 @@
           if (op.match(/^[A-Z]+$/))
             trouble(elem,`${op} doesn't name a block we know.`)
           else if (code.command.match(/\S/))
-            trouble(elem, `Blocks begin with an all-caps keyword.`)
+            trouble(elem, `Expected line to begin with all-caps keyword.`)
       } else if(typeof code == 'array') {
         run(code)
       }
@@ -102,10 +101,9 @@
   function emit($item, item) {
     const lines = item.text.split(/\n/)
     const nest = tree(lines,[],0)
-    const index = {}
-    const html = format(nest,index)
+    const html = format(nest)
     $item.append(`<div style="background-color:#eee;padding:15px;border-top:8px;">${html}</div>`)
-    run(nest,index)
+    run(nest)
   }
 
   function bind($item, item) {

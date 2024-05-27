@@ -39,7 +39,7 @@
         part.key = key
         if(part.command)
           html.push(`<span id=${key}>${expand(part.command)}</span>`)
-        else
+        else if(typeof part == 'array')
           html.push(`<div id=${key} style="padding-left:15px">${block(part,[...path,0])}</div>  `)
         path[path.length-1]++
       }
@@ -48,17 +48,18 @@
     return block(nest,[0])
   }
 
+  function trouble(elem,message) {
+    elem.innerHTML += `<button style="border-width:0;color:red;">✖︎</button>`
+    elem.querySelector('button').addEventListener('click',event => {
+      elem.outerHTML += `<span style="width:80%;color:gray;">${message}</span>` })
+  }
+
   function click_emit (elem) {
+    if(elem.innerHTML.match(/button/)) return
     const body = this
-    console.log({body,elem})
-    if (!body.length && !elem.innerHTML.match(/button/)) {
-      console.log('trouble')
-      elem.innerHTML += '<button style="border-width:0;color:red;" title="nothing to run">✖︎</button>'
-    } else
-    if (!elem.innerHTML.match(/button/)) {
-      elem.innerHTML += '<button style="border-width:0;">◉</button>'
-      elem.querySelector('button').addEventListener('click',event => run(this))
-    }
+    if (!body.length) return trouble(elem,'CLICK expects indented blocks to follow.')
+    elem.innerHTML += '<button style="border-width:0;">◉</button>'
+    elem.querySelector('button').addEventListener('click',event => run(this))
   }
 
   function click_bind (elem) {
@@ -78,7 +79,6 @@
   }
 
   function run (nest) {
-    console.log({nest})
     const scope = nest.slice()
     while (scope.length) {
       const code = scope.shift()
@@ -86,9 +86,14 @@
         const elem = document.getElementById(code.key)
         const [op, ...args] = code.command.split(/ +/)
         const more = scope[0]?.command ? null : scope.shift()
-        console.log({op,args,more})
-        blocks[op].emit.apply(more||[],[elem,...args])        
-      } else {
+        if (blocks[op])
+          blocks[op].emit.apply(more||[],[elem,...args])
+        else
+          if (op.match(/^[A-Z]+$/))
+            trouble(elem,`${op} doesn't name a block we know.`)
+          else if (code.command.match(/\S/))
+            trouble(elem, `Blocks begin with an all-caps keyword.`)
+      } else if(typeof code == 'array') {
         run(code)
       }
     }

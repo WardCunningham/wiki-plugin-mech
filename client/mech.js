@@ -48,6 +48,7 @@
   }
 
   function trouble(elem,message) {
+    if(elem.innerText.match(/✖︎/)) return
     elem.innerHTML += `<button style="border-width:0;color:red;">✖︎</button>`
     elem.querySelector('button').addEventListener('click',event => {
       elem.outerHTML += `<span style="width:80%;color:gray;">${message}</span>` })
@@ -57,7 +58,10 @@
     if(elem.innerHTML.match(/button/)) return
     if (!body?.length) return trouble(elem,'CLICK expects indented blocks to follow.')
     elem.innerHTML += '<button style="border-width:0;">◉</button>'
-    elem.querySelector('button').addEventListener('click',event => run(body,state))
+    elem.querySelector('button').addEventListener('click',event => {
+      state.debug = event.shiftKey
+      run(body,state)
+    })
   }
 
   function hello_emit ({elem,args}) {
@@ -97,6 +101,7 @@
     fetch(url)
       .then (res => res.json())
       .then (data => {
+        if(state.debug) console.log({sensor,data})
         elem.innerHTML = line + ' ⌛'
         const value = f(avg(Object.values(data)))
         state.temperature = `${value.toFixed(2)}°F`
@@ -129,6 +134,7 @@
         const next = scope[0]
         const body = next && ('command' in next) ? null : scope.shift()
         const stuff = {command,op,args,body,elem,state}
+        if(state.debug) console.log(stuff)
         if (blocks[op])
           blocks[op].emit.apply(null,[stuff])
         else

@@ -121,6 +121,7 @@
     if (!(args && args.length)) return trouble(elem,`Expected Source topic, like "markers" for Map markers.`)
     const topic = args[0]
     const sources = requestSourceData(state.$item, topic)
+    if(!sources.length) return trouble(elem,`Expected source for "${topic}" in the lineup.`)
     const count = type => {
       const count = sources
         .filter(source => [...source.div.classList].includes(type))

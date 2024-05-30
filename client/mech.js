@@ -170,7 +170,7 @@
         return trouble(elem,`"${arg}" doesn't name an item we can preview`)
       }
     }
-    const title = "Mech Preview"
+    const title = "Mech Preview" + (state.tick ? ` ${state.tick}` : '')
     const page = {title,story}
     const options = {$page:$(elem.closest('.page'))}
     wiki.showResult(wiki.newPage(page), options)
@@ -185,6 +185,32 @@
     state.aspect = [{div:item,result:aspect}]
   }
 
+  function tick_emit ({elem,args,body,state}) {
+    if(elem.innerHTML.match(/button/)) return
+    if (!body?.length) return trouble(elem,'TICK expects indented blocks to follow.')
+    const count = args[0] || '1'
+    if (!count.match(/^[1-9][0-9]?$/)) return trouble(elem,"TICK expects a count from 1 to 99")
+    let clock = null
+    elem.innerHTML += '<button style="border-width:0;">◉</button>'
+    elem.querySelector('button').addEventListener('click',event => {
+      state.debug = event.shiftKey
+      if(clock){
+        clock = clearInterval(clock)
+        delete state.tick
+      } else {
+        state.tick = +count
+        run(body,state)
+        clock = setInterval(()=>{
+          if(state.debug) console.log({tick:state.tick})
+          if(--state.tick > 0)
+            run(body,state)
+          else
+            clock = clearInterval(clock)
+        },1000)
+      }
+    })
+  }
+
   const blocks = {
     CLICK:   {emit:click_emit},
     HELLO:   {emit:hello_emit},
@@ -193,7 +219,8 @@
     REPORT:  {emit:report_emit},
     SOURCE:  {emit:source_emit},
     PREVIEW: {emit:preview_emit},
-    NEIGHBOR:{emit:neighbor_emit}
+    NEIGHBOR:{emit:neighbor_emit},
+    TICK:    {emit:tick_emit}
   }
 
   function run (nest,state={}) {

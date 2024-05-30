@@ -176,13 +176,27 @@
     wiki.showResult(wiki.newPage(page), options)
   }
 
-  function neighbor_emit ({elem,command,args,state}) {
-    const aspect = walks(4)
-    elem.innerHTML = command + ` ⇒ ${aspect.length} aspects`
+  function neighbors_emit ({elem,command,args,state}) {
+    const want = args[0]
+    if(state.debug) console.log({neighborhoodObject:wiki.neighborhoodObject})
+    const have = Object.entries(wiki.neighborhoodObject.sites)
+      .filter(([domain,site]) => !site.sitemapRequestInflight && (!want || domain.includes(want)))
+      .map(([domain,site]) => (site.sitemap||[])
+        .map(info => Object.assign({domain},info)))
+    state.neighborhood = have.flat()
+      .sort((a,b) => b.date - a.date)
+    elem.innerHTML = command + ` ⇒ ${state.neighborhood.length} pages, ${have.length} sites`
+  }
+
+  function walk_emit ({elem,command,args,state}) {
+    const steps = Object.groupBy(walks(state.neighborhood),({graph})=>graph?'some':'none')
+    console.log({steps})
+    const nodes = steps.some.map(({graph}) => graph.nodes).flat()
+    elem.innerHTML = command + ` ⇒ ${steps.some.length} aspects, ${steps.none.length} empty, ${nodes.length} nodes`
     const item = elem.closest('.item')
     item.classList.add('aspect-source')
-    item.aspectData = () => aspect
-    state.aspect = [{div:item,result:aspect}]
+    item.aspectData = () => steps.some
+    state.aspect = [{div:item,result:steps.some}]
   }
 
   function tick_emit ({elem,args,body,state}) {
@@ -219,7 +233,8 @@
     REPORT:  {emit:report_emit},
     SOURCE:  {emit:source_emit},
     PREVIEW: {emit:preview_emit},
-    NEIGHBOR:{emit:neighbor_emit},
+    NEIGHBORS:{emit:neighbors_emit},
+    WALK:    {emit:walk_emit},
     TICK:    {emit:tick_emit}
   }
 
@@ -313,27 +328,45 @@
   }
 
   // inspired by aspects-of-recent-changes/roster-graphs.html
-  function walks() {
+  function walks(neighborhood) {
     const prob = n => Math.floor(n * Math.abs(Math.random()-Math.random()))
     const rand = a => a[prob(a.length)]
-    const hood = wiki.neighborhoodObject
-    const aspect = []
-    for (const [domain,site] of Object.entries(hood.sites)) {
-      const pages = site.sitemap
-        .map(info => Object.assign({domain}, info))
-        .sort((a,b) => b.date - a.date)
-      const graph = new Graph()
-      let nid = 0
-      const node = () => graph.addNode('',{name:rand(pages).title.replaceAll(/ /g,"\n")})
-      const more = from => {nid = node(); graph.addRel('',from,nid)}
-      const any = () => prob(graph.nodes.length)
-      node(); more(nid); more(nid)
-      more(any()); more(nid); more(nid)
-      more(any()); more(nid); more(nid)
-      more(any()); more(nid)
-      aspect.push({name:domain,graph})
-    }
-    return aspect
+    const domains = neighborhood
+      .map(info => info.domain)
+      .filter(uniq)
+    return domains
+      .map(domain => {
+        const name = domain.split('.').slice(0,3).join('.')
+        const done = new Set()
+        const graph = new Graph()
+        let nid = 0
+        const here = neighborhood
+          .filter(info => info.domain==domain && ('links' in info))
+        if(!here.length) return {name,graph:null}
+        const find = slug => neighborhood.find(info => info.slug == slug)
+        const node = info => {
+          nid = graph.addNode('',{
+            name:info.title.replaceAll(/ /g,"\n"),
+            title:info.title,
+            site:domain,
+            links:Object.keys(info.links||{}).filter(slug => find(slug))})
+          return nid}
+        const rel = (here,there) => graph.addRel('',here,there)
+        const links = nid => graph.nodes[nid].props.links.filter(slug => !done.has(slug))
+        const start = rand(here)
+        done.add(start.slug)
+        node(start)
+        for (n=5;n>0;n--) {
+          try {
+            const slugs = links(nid)
+            const slug = rand(slugs)
+            done.add(slug)
+            const info = find(slug)
+            rel(nid,node(info))}
+          catch (e) {}
+        }
+        return {name,graph}
+      })
   }
 
   // adapted from graph/src/graph.js

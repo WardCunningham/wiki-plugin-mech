@@ -172,18 +172,28 @@
     }
     const title = "Mech Preview"
     const page = {title,story}
-    const options = {}
+    const options = {$page:$(elem.closest('.page'))}
     wiki.showResult(wiki.newPage(page), options)
   }
 
+  function neighbor_emit ({elem,command,args,state}) {
+    const aspect = walks(4)
+    elem.innerHTML = command + ` ⇒ ${aspect.length} aspects`
+    const item = elem.closest('.item')
+    item.classList.add('aspect-source')
+    item.aspectData = () => aspect
+    state.aspect = [{div:item,result:aspect}]
+  }
+
   const blocks = {
-    CLICK: {emit:click_emit, bind:null},
-    HELLO: {emit:hello_emit, bind:null},
-    FROM: {emit:from_emit, bind:null},
-    SENSOR:  {emit:sensor_emit, bind:null},
-    REPORT:  {emit:report_emit, bind:null},
-    SOURCE:  {emit:source_emit, bind:null},
-    PREVIEW:  {emit:preview_emit, bind:null}
+    CLICK:   {emit:click_emit},
+    HELLO:   {emit:hello_emit},
+    FROM:    {emit:from_emit},
+    SENSOR:  {emit:sensor_emit},
+    REPORT:  {emit:report_emit},
+    SOURCE:  {emit:source_emit},
+    PREVIEW: {emit:preview_emit},
+    NEIGHBOR:{emit:neighbor_emit}
   }
 
   function run (nest,state={}) {
@@ -215,7 +225,7 @@
     const lines = item.text.split(/\n/)
     const nest = tree(lines,[],0)
     const html = format(nest)
-    const state = {$item}
+    const state = {$item} // deprecated. use elem.closest('.item')
     $item.append(`<div style="background-color:#eee;padding:15px;border-top:8px;">${html}</div>`)
     run(nest,state)
   }
@@ -260,7 +270,7 @@
   function dotify(graph) {
     const tip = props => Object.entries(props).filter(e => e[1]).map(e => `${e[0]}: ${e[1]}`).join("\\n")
     const nodes = graph.nodes.map((node,id) => {
-      const label = `${node.type}\\n${node.props.name}`
+      const label = node.type ? `${node.type}\\n${node.props.name}` : node.props.name
       return `${id} [label="${label}" ${(node.props.url||node.props.tick)?`URL="${node.props.url||'#'}" target="_blank"`:''} tooltip="${tip(node.props)}"]`
     })
     const edges = graph.rels.map(rel => {
@@ -275,5 +285,58 @@
       '}'].join("\n")
   }
 
+  // inspired by aspects-of-recent-changes/roster-graphs.html
+  function walks() {
+    const prob = n => Math.floor(n * Math.abs(Math.random()-Math.random()))
+    const rand = a => a[prob(a.length)]
+    const hood = wiki.neighborhoodObject
+    const aspect = []
+    for (const [domain,site] of Object.entries(hood.sites)) {
+      const pages = site.sitemap
+        .map(info => Object.assign({domain}, info))
+        .sort((a,b) => b.date - a.date)
+      const graph = new Graph()
+      let nid = 0
+      const node = () => graph.addNode('',{name:rand(pages).title.replaceAll(/ /g,"\n")})
+      const more = from => {nid = node(); graph.addRel('',from,nid)}
+      const any = () => prob(graph.nodes.length)
+      node(); more(nid); more(nid)
+      more(any()); more(nid); more(nid)
+      more(any()); more(nid); more(nid)
+      more(any()); more(nid)
+      aspect.push({name:domain,graph})
+    }
+    return aspect
+  }
+
+  // adapted from graph/src/graph.js
+  class Graph {
+
+    constructor(nodes=[], rels=[]) {
+      this.nodes = nodes;
+      this.rels = rels;
+    }
+
+    addNode(type, props={}){
+      const obj = {type, in:[], out:[], props};
+      this.nodes.push(obj);
+      return this.nodes.length-1;
+    }
+
+    addRel(type, from, to, props={}) {
+      const obj = {type, from, to, props};
+      this.rels.push(obj);
+      const rid = this.rels.length-1;
+      this.nodes[from].out.push(rid)
+      this.nodes[to].in.push(rid);
+      return rid;
+    }
+
+    stringify(...args) {
+      const obj = { nodes: this.nodes, rels: this.rels }
+      return JSON.stringify(obj, ...args)
+    }
+
+  }
 
 }).call(this)

@@ -190,12 +190,12 @@
 
   function walk_emit ({elem,command,args,state}) {
     const steps = Object.groupBy(walks(state.neighborhood),({graph})=>graph?'some':'none')
-    console.log({steps})
-    const nodes = steps.some.map(({graph}) => graph.nodes).flat()
-    elem.innerHTML = command + ` ⇒ ${steps.some.length} aspects, ${steps.none.length} empty, ${nodes.length} nodes`
+    if(state.debug) console.log({steps})
+    const nodes = (steps.some||[]).map(({graph}) => graph.nodes).flat()
+    elem.innerHTML = command + ` ⇒ ${(steps.some||[]).length} aspects, ${(steps.none||[]).length} empty, ${nodes.length} nodes`
     const item = elem.closest('.item')
     item.classList.add('aspect-source')
-    item.aspectData = () => steps.some
+    item.aspectData = () => (steps.some||[])
     state.aspect = [{div:item,result:steps.some}]
   }
 

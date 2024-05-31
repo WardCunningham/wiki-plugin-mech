@@ -189,14 +189,17 @@
   }
 
   function walk_emit ({elem,command,args,state}) {
-    const steps = Object.groupBy(walks(state.neighborhood),({graph})=>graph?'some':'none')
+    const steps = walks(state.neighborhood)
+    const aspects = steps.filter(({graph})=>graph)
     if(state.debug) console.log({steps})
-    const nodes = (steps.some||[]).map(({graph}) => graph.nodes).flat()
-    elem.innerHTML = command + ` ⇒ ${(steps.some||[]).length} aspects, ${(steps.none||[]).length} empty, ${nodes.length} nodes`
+    elem.innerHTML = command
+    const nodes = aspects.map(({graph}) => graph.nodes).flat()
+    elem.innerHTML += ` ⇒ ${aspects.length} aspects, ${nodes.length} nodes`
+    if(steps.find(({graph}) => !graph)) trouble(elem,"WALK skipped sites with no links in sitemaps")
     const item = elem.closest('.item')
     item.classList.add('aspect-source')
-    item.aspectData = () => (steps.some||[])
-    state.aspect = [{div:item,result:steps.some}]
+    item.aspectData = () => aspects
+    state.aspect = [{div:item,result:aspects}]
   }
 
   function tick_emit ({elem,args,body,state}) {

@@ -246,6 +246,20 @@
           }
   }
 
+  function forward_emit ({elem,command,args,state}) {
+    if(args.length < 1) return trouble(elem,`FORWARD expects an argument, the number of steps to move a "turtle".`)
+    if(!('turtle' in state)) state.turtle = new Turtle(elem)
+    const position = state.turtle.forward(+args[0])
+    elem.innerHTML = command + ` ⇒ ${position.map(n => (n-200).toFixed(1)).join(', ')}`
+  }
+
+  function turn_emit ({elem,command,args,state}) {
+    if(args.length < 1) return trouble(elem,`TURN expects an argument, the number of degrees to turn a "turtle".`)
+    if(!('turtle' in state)) state.turtle = new Turtle(elem)
+    const direction = state.turtle.turn(+args[0])
+    elem.innerHTML = command + ` ⇒ ${direction}°`
+  }
+
   const blocks = {
     CLICK:   {emit:click_emit},
     HELLO:   {emit:hello_emit},
@@ -257,7 +271,9 @@
     NEIGHBORS:{emit:neighbors_emit},
     WALK:    {emit:walk_emit},
     TICK:    {emit:tick_emit},
-    UNTIL:   {emit:until_emit}
+    UNTIL:   {emit:until_emit},
+    FORWARD: {emit:forward_emit},
+    TURN:    {emit:turn_emit}
   }
 
   function run (nest,state={}) {
@@ -419,6 +435,45 @@
       return JSON.stringify(obj, ...args)
     }
 
+  }
+
+  class Turtle {
+    constructor(elem) {
+      const size = elem
+      const div = document.createElement('div')
+      elem.closest('.item').firstElementChild.prepend(div)
+      div.outerHTML = `
+        <div style="border:1px solid black; background-color:#f8f8f8; margin-bottom:16px;">
+          <svg viewBox="0 0 400 400" width=100% height=400>
+            <circle id=dot r=5 cx=200 cy=200 stroke="#ccc"></circle>
+          </svg>
+        </div>`
+      this.svg = elem.closest('.item').getElementsByTagName('svg')[0]
+      this.position = [200,200]
+      this.direction = 0
+    }
+
+    forward(steps) {
+      const theta = this.direction*2*Math.PI/360
+      const [x1,y1] = this.position
+      const [x2,y2] = [x1+steps*Math.sin(theta), y1+steps*Math.cos(theta)]
+      const line = document.createElementNS("http://www.w3.org/2000/svg", 'line')
+      const set = (k,v) => line.setAttribute(k,Math.round(v))
+      set("x1",x1); set("y1",400-y1)
+      set("x2",x2); set("y2",400-y2)
+      line.style.stroke = "black"
+      line.style.strokeWidth = "2px"
+      this.svg.appendChild(line)
+      const dot = this.svg.getElementById('dot')
+      dot.setAttribute('cx',Math.round(x2))
+      dot.setAttribute('cy',Math.round(400-y2))
+      this.position = [x2,y2]
+      return this.position
+    }
+
+    turn(degrees) {
+      this.direction += degrees
+      return this.direction}
   }
 
 }).call(this)

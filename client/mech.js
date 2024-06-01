@@ -219,13 +219,31 @@
         run(body,state)
         clock = setInterval(()=>{
           if(state.debug) console.log({tick:state.tick})
-          if(--state.tick > 0)
+          if(('tick' in state) && --state.tick > 0)
             run(body,state)
           else
             clock = clearInterval(clock)
         },1000)
       }
     })
+  }
+
+  function until_emit ({elem,command,args,body,state}) {
+    if(!args.length) return trouble(elem,`UNTIL expects an argument, a word to stop running.`)
+    if(!state.tick) return trouble(elem,`UNTIL expects to indented below an iterator, like TICKS.`)
+    if(!state.aspect) return trouble(elem,`UNTIL expects "aspect", like from WALK.`)
+    elem.innerHTML = command + ` ⇒ ${state.tick}`
+    const word = args[0]
+    for(const {div,result} of state.aspect)
+      for(const {name,graph} of result)
+        for(const node of graph.nodes)
+          if(node.type.includes(word) || node.props.name.includes(word)) {
+            if(state.debug) console.log({div,result,name,graph,node})
+            delete state.tick
+            elem.innerHTML += ' done'
+            if (body) run(body,state)
+            return
+          }
   }
 
   const blocks = {
@@ -238,7 +256,8 @@
     PREVIEW: {emit:preview_emit},
     NEIGHBORS:{emit:neighbors_emit},
     WALK:    {emit:walk_emit},
-    TICK:    {emit:tick_emit}
+    TICK:    {emit:tick_emit},
+    UNTIL:   {emit:until_emit}
   }
 
   function run (nest,state={}) {

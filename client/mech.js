@@ -63,13 +63,20 @@
     const tap = elem.previousElementSibling
     if(state.debug) {
       const value = state[key]
-      console.log({key,value})
       tap.innerHTML = `${key} ⇒ `
       tap.addEventListener('click',event => {
-        if(typeof value == 'array')
-          console.log(key, ...value)
-        else
-          console.log(key, value)
+        console.log({key,value})
+        let look = tap.previousElementSibling
+        if (!(look?.classList.contains('look'))) {
+          const div = document.createElement('div')
+          div.classList.add('look')
+          tap.insertAdjacentElement('beforebegin',div)
+          look = tap.previousElementSibling
+        }
+        let text = JSON.stringify(value,null,1)
+        if(text.length>300) text = text.substring(0,400)+'...'
+        const css = `border:1px solid black; background-color:#f8f8f8; padding:8px; color:gray; word-break: break-all;`
+        look.innerHTML = `<div style="${css}">${text}</div>`
       })
     }
     else {
@@ -108,7 +115,7 @@
   function click_emit ({elem,body,state}) {
     if(elem.innerHTML.match(/button/)) return
     if (!body?.length) return trouble(elem,'CLICK expects indented blocks to follow.')
-    elem.innerHTML += '<button style="border-width:0;">◉</button>'
+    elem.innerHTML += '<button style="border-width:0;">►</button>'
     elem.querySelector('button').addEventListener('click',event => {
       state.debug = event.shiftKey
       run(body,state)
@@ -184,7 +191,7 @@
       .join(", ")
     if (state.debug) console.log({topic,sources})
     elem.innerHTML = command + ' ⇒ ' + counts
-    state[topic] = sources
+    state[topic] = sources.map(({div,result}) => ({id:div.dataset.id, result}))
     if (body) run(body,state)
   }
 
@@ -260,7 +267,7 @@
     const item = elem.closest('.item')
     item.classList.add('aspect-source')
     item.aspectData = () => aspects
-    state.aspect = [{div:item,result:aspects}]
+    state.aspect = [{id:item.dataset.id,result:aspects}]
   }
 
   function tick_emit ({elem,args,body,state}) {
@@ -269,7 +276,7 @@
     const count = args[0] || '1'
     if (!count.match(/^[1-9][0-9]?$/)) return trouble(elem,"TICK expects a count from 1 to 99")
     let clock = null
-    elem.innerHTML += '<button style="border-width:0;">◉</button>'
+    elem.innerHTML += '<button style="border-width:0;">►</button>'
     elem.querySelector('button').addEventListener('click',event => {
       state.debug = event.shiftKey
       if(clock){

@@ -11,7 +11,10 @@
       .replace(/\*(.+?)\*/g, '<i>$1</i>')
   }
 
- // https://github.com/dobbs/wiki-plugin-graphviz/blob/main/client/graphviz.js#L86-L103
+
+ // I N T E R P R E T E R
+
+  // https://github.com/dobbs/wiki-plugin-graphviz/blob/main/client/graphviz.js#L86-L103
   function tree(lines, here, indent) {
     while (lines.length) {
       let m = lines[0].match(/( *)(.*)/)
@@ -39,7 +42,7 @@
         const key = `${unique}.${path.join('.')}`
         part.key = key
         if('command' in part)
-          html.push(`<span id=${key}>${expand(part.command)}</span>`)
+          html.push(`<font color=gray size=small></font><span id=${key}>${expand(part.command)}</span>`)
         else
           html.push(`<div id=${key} style="padding-left:15px">${block(part,[...path,0])}</div>  `)
         path[path.length-1]++
@@ -55,6 +58,52 @@
     elem.querySelector('button').addEventListener('click',event => {
       elem.outerHTML += `<span style="width:80%;color:gray;">${message}</span>` })
   }
+
+  function inspect(elem,key,state) {
+    const tap = elem.previousElementSibling
+    if(state.debug) {
+      const value = state[key]
+      console.log({key,value})
+      tap.innerHTML = `${key} ⇒ `
+      tap.addEventListener('click',event => {
+        if(typeof value == 'array')
+          console.log(key, ...value)
+        else
+          console.log(key, value)
+      })
+    }
+    else {
+      tap.innerHTML = ''
+    }
+  }
+
+  function run (nest,state={}) {
+    const scope = nest.slice()
+    while (scope.length) {
+      const code = scope.shift()
+      if ('command' in code) {
+        const command = code.command
+        const elem = document.getElementById(code.key)
+        const [op, ...args] = code.command.split(/ +/)
+        const next = scope[0]
+        const body = next && ('command' in next) ? null : scope.shift()
+        const stuff = {command,op,args,body,elem,state}
+        if(state.debug) console.log(stuff)
+        if (blocks[op])
+          blocks[op].emit.apply(null,[stuff])
+        else
+          if (op.match(/^[A-Z]+$/))
+            trouble(elem,`${op} doesn't name a block we know.`)
+          else if (code.command.match(/\S/))
+            trouble(elem, `Expected line to begin with all-caps keyword.`)
+      } else if(typeof code == 'array') {
+        run(code,state)
+      }
+    }
+  }
+
+
+// B L O C K S
 
   function click_emit ({elem,body,state}) {
     if(elem.innerHTML.match(/button/)) return
@@ -86,6 +135,7 @@
   function sensor_emit ({elem,args,body,state}) {
     const line = elem.innerHTML.replaceAll(/ ⌛/g,'')
     if(!('page' in state)) return trouble(elem,`Expect "page" as with FROM.`)
+    inspect(elem,'page',state)
     const datalog = state.page.story.find(item => item.type == 'datalog')
     if(!datalog) return trouble(elem, `Expect Datalog plugin in the page.`)
     const want = args[0]
@@ -114,20 +164,22 @@
   function report_emit ({elem,command,state}) {
     const value = state?.temperature
     if (!value) return trouble(elem,`Expect data, as from SENSOR.`)
+    inspect(elem,'temperature',state)
     elem.innerHTML = command + `<br><font face=Arial size=32>${value}</font>`
   }
 
   function source_emit ({elem,command,args,body,state}) {
     if (!(args && args.length)) return trouble(elem,`Expected Source topic, like "markers" for Map markers.`)
     const topic = args[0]
-    const sources = requestSourceData(state.$item, topic)
+    const item = elem.closest('.item')
+    const sources = requestSourceData(item, topic)
     if(!sources.length) return trouble(elem,`Expected source for "${topic}" in the lineup.`)
     const count = type => {
       const count = sources
         .filter(source => [...source.div.classList].includes(type))
         .length
       return count ? `${count} ${type}` : null}
-    const counts = [count('map'),count('image'),count('frame')]
+    const counts = [count('map'),count('image'),count('frame'),count('assets')]
       .filter(count => count)
       .join(", ")
     if (state.debug) console.log({topic,sources})
@@ -143,6 +195,7 @@
       switch (arg) {
       case 'map':
         if(!('marker' in state)) return trouble(elem,`"map" preview expects "marker" state, like from "SOURCE marker".`)
+        inspect(elem,'marker',state)
         const text = state.marker
           .map(marker => [marker.result])
           .flat(2)
@@ -153,6 +206,7 @@
         break
       case 'graph':
         if(!('aspect' in state)) return trouble(elem,`"graph" preview expects "aspect" state, like from "SOURCE aspect".`)
+        inspect(elem,'aspect',state)
         for (const {div,result} of state.aspect) {
           for (const {name,graph} of result) {
             if(state.debug) console.log({div,result,name,graph})
@@ -161,6 +215,11 @@
           }
           story.push({type:'pagefold',text:'.'})
         }
+        break
+      case 'items':
+        if(!('items' in state)) return trouble(elem,`"graph" preview expects "items" state, like from "KWIC".`)
+        inspect(elem,'items',state)
+        story.push(...state.items)
         break
       case 'synopsis':
         {const text = `This page has been generated by the Mech plugin. We want to tell you where. That's coming soon.`
@@ -189,6 +248,8 @@
   }
 
   function walk_emit ({elem,command,args,state}) {
+    if(!('neighborhood' in state)) return trouble(elem,`FILE expects state.neighborhood, like from NEIGHBORS.`)
+    inspect(elem,'neighborhood',state)
     const steps = walks(state.neighborhood)
     const aspects = steps.filter(({graph})=>graph)
     if(state.debug) console.log({steps})
@@ -232,6 +293,7 @@
     if(!args.length) return trouble(elem,`UNTIL expects an argument, a word to stop running.`)
     if(!state.tick) return trouble(elem,`UNTIL expects to indented below an iterator, like TICKS.`)
     if(!state.aspect) return trouble(elem,`UNTIL expects "aspect", like from WALK.`)
+    inspect(elem,'aspect',state)
     elem.innerHTML = command + ` ⇒ ${state.tick}`
     const word = args[0]
     for(const {div,result} of state.aspect)
@@ -260,6 +322,34 @@
     elem.innerHTML = command + ` ⇒ ${direction}°`
   }
 
+  function file_emit ({elem,command,args,body,state}) {
+    if(!('assets' in state)) return trouble(elem,`FILE expects state.assets, like from SOURCE assets.`)
+    inspect(elem,'assets',state)
+    if(args.length < 1) return trouble(elem,`FILE expects an argument, the dot suffix for desired files.`)
+    if (!body?.length) return trouble(elem,'FILE expects indented blocks to follow.')
+    const suffix = args[0]
+    const url = 'http://ward.dojo.fed.wiki/assets/pages/testing-file-mech/KWIC-list-axe-files.tsv'
+    fetch(url)
+      .then(res => res.text())
+      .then(text => {
+        elem.innerHTML = command + ` ⇒ ${text.length} bytes`
+        state.tsv = text
+        run(body,state)
+      })
+  }
+
+  function kwic_emit ({elem,command,args,state}) {
+    if(!('tsv' in state)) return trouble(elem,`KWIC expects a .tsv file, like from ASSETS .tsv.`)
+    inspect(elem,'tsv',state)
+    const lines = state.tsv.split(/\n/)
+    elem.innerHTML = command + ` ⇒ ${lines.length} lines`
+    const text = `Yes, we have no bananas. [https://en.wikipedia.org/wiki/Yes!_We_Have_No_Bananas wikipedia]`
+    state.items = [{type:'paragraph',text}]
+  }
+
+
+// C A T A L O G
+
   const blocks = {
     CLICK:   {emit:click_emit},
     HELLO:   {emit:hello_emit},
@@ -273,39 +363,19 @@
     TICK:    {emit:tick_emit},
     UNTIL:   {emit:until_emit},
     FORWARD: {emit:forward_emit},
-    TURN:    {emit:turn_emit}
+    TURN:    {emit:turn_emit},
+    FILE:    {emit:file_emit},
+    KWIC:    {emit:kwic_emit}
   }
 
-  function run (nest,state={}) {
-    const scope = nest.slice()
-    while (scope.length) {
-      const code = scope.shift()
-      if ('command' in code) {
-        const command = code.command
-        const elem = document.getElementById(code.key)
-        const [op, ...args] = code.command.split(/ +/)
-        const next = scope[0]
-        const body = next && ('command' in next) ? null : scope.shift()
-        const stuff = {command,op,args,body,elem,state}
-        if(state.debug) console.log(stuff)
-        if (blocks[op])
-          blocks[op].emit.apply(null,[stuff])
-        else
-          if (op.match(/^[A-Z]+$/))
-            trouble(elem,`${op} doesn't name a block we know.`)
-          else if (code.command.match(/\S/))
-            trouble(elem, `Expected line to begin with all-caps keyword.`)
-      } else if(typeof code == 'array') {
-        run(code,state)
-      }
-    }
-  }
+
+// P L U G I N
 
   function emit($item, item) {
     const lines = item.text.split(/\n/)
     const nest = tree(lines,[],0)
     const html = format(nest)
-    const state = {$item} // deprecated. use elem.closest('.item')
+    const state = {}
     $item.append(`<div style="background-color:#eee;padding:15px;border-top:8px;">${html}</div>`)
     run(nest,state)
   }
@@ -325,16 +395,16 @@
   }
 
 
-// library functions
+// L I B R A R Y
 
   // adapted from wiki-plugin-frame/client/frame.js
-  function requestSourceData($item, topic) {
+  function requestSourceData(item, topic) {
     let sources = []
     for (let div of document.querySelectorAll(`.item`)) {
       if (div.classList.contains(`${topic}-source`)) {
         sources.unshift(div)
       }
-      if (div === $item.get(0)) {
+      if (div === item) {
         break
       }
     }

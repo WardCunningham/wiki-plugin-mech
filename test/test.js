@@ -49,7 +49,7 @@
         var nest = mech.tree(lines,[],0)
         var html = mech.format(nest)
         var result = html.replaceAll(/<(\/?.\w+).*?>/g,"<$1>")
-        expect(result).to.be('<font></font><span>CLICK</span><br>\n<div><font></font><span>HELLO</span></div>')
+        expect(result).to.be('<font></font><span>CLICK</span>\n<div><font></font><span>HELLO</span></div>')
       })
     })
 

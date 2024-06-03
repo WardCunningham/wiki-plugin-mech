@@ -41,12 +41,12 @@
         const key = `${unique}.${path.join('.')}`
         part.key = key
         if('command' in part)
-          html.push(`<font color=gray size=small></font><span id=${key}>${expand(part.command)}</span>`)
+          html.push(`<font color=gray size=small></font><span style="display: block;" id=${key}>${expand(part.command)}</span>`)
         else
           html.push(`<div id=${key} style="padding-left:15px">${block(part,[...path,0])}</div>`)
         path[path.length-1]++
       }
-      return html.join("<br>\n")
+      return html.join("\n")
     }
     return block(nest,[0])
   }
@@ -344,13 +344,44 @@
       })
   }
 
-  function kwic_emit ({elem,command,args,state}) {
+  function kwic_emit ({elem,command,args,body,state}) {
+    const template = body && body[0]?.command
+    if(template && !template.match(/\$[KW]/)) return trouble(elem,`KWIK expects $K or $W in link prototype.`)
     if(!('tsv' in state)) return trouble(elem,`KWIC expects a .tsv file, like from ASSETS .tsv.`)
-    inspect(elem,'tsv',state)
-    const lines = state.tsv.split(/\n/)
-    elem.innerHTML = command + ` ⇒ ${lines.length} lines`
-    const text = `Yes, we have no bananas. [https://en.wikipedia.org/wiki/Yes!_We_Have_No_Bananas wikipedia]`
-    state.items = [{type:'paragraph',text}]
+    const prefix = args[0] || 1
+    const lines = state.tsv.trim().split(/\n/)
+
+    const stop = new Set(['of','and','in','at'])
+    const page = $(elem.closest('.page')).data('data')
+    const start = page.story.findIndex(item => item.type=='pagefold' && item.text=='stop')
+    if(start >= 0) {
+      const finish = page.story.findIndex((item,i) => i>start && item.type=='pagefold')
+      page.story.slice(start+1,finish)
+        .map(item => item.text.trim().split(/\s+/))
+        .flat()
+        .forEach(word => stop.add(word))
+    }
+
+    const groups = kwic(prefix,lines,stop)
+    elem.innerHTML = command + ` ⇒ ${lines.length} lines, ${groups.length} groups`
+    const link = quote => {
+      let line = quote.line
+      if(template) {
+        const substitute = template
+          .replaceAll(/\$K\+/g,quote.key.replaceAll(/ /g,'+'))
+          .replaceAll(/\$K/g,quote.key)
+          .replaceAll(/\$W/g,quote.word)
+        const target = template.match(/\$W/) ? quote.word : quote.key
+        line = line.replace(target,substitute)
+      }
+      return line
+    }
+
+    state.items = groups.map(group => {
+      text = `# ${group.group}\n\n${group.quotes
+        .map(quote=>link(quote))
+        .join("\n")}`
+      return {type:'markdown',text}})
   }
 
 
@@ -482,6 +513,39 @@
         return {name,graph}
       })
   }
+
+
+  // adapted from testing-file-mech/testing-kwic.html
+  function kwic(prefix,lines,stop) {
+    const quotes = lines
+      .filter(line => line.match(/\t/))
+      .map(quote)
+      .flat()
+      .sort((a,b) => a.word<b.word ? -1 : 1)
+    let current = 'zzz'.slice(0,prefix)
+    const groups = []
+    for (const quote of quotes) {
+      const group = quote.word.toLowerCase().slice(0,prefix)
+      if (group != current) {
+        groups.push({group,quotes:[]})
+        current = group}
+      groups[groups.length-1].quotes.push(quote)
+    }
+    return groups
+
+    function quote(line) {
+      const [key,text] = line.split(/\t/)
+      const words = text
+        .replaceAll(/'t\b/g,'t')
+        .replaceAll(/'s\b/g,'s')
+        .split(/[^a-zA-Z]+/)
+        .filter(word => word.length>3 && !stop.has(word.toLowerCase()))
+      return words
+        .map(word => ({word,line,key}))
+    }
+  }
+
+
 
   // adapted from graph/src/graph.js
   class Graph {

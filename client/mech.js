@@ -8,7 +8,6 @@
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/\*(.+?)\*/g, '<i>$1</i>')
   }
 
 
@@ -44,7 +43,7 @@
         if('command' in part)
           html.push(`<font color=gray size=small></font><span id=${key}>${expand(part.command)}</span>`)
         else
-          html.push(`<div id=${key} style="padding-left:15px">${block(part,[...path,0])}</div>  `)
+          html.push(`<div id=${key} style="padding-left:15px">${block(part,[...path,0])}</div>`)
         path[path.length-1]++
       }
       return html.join("<br>\n")
@@ -84,13 +83,13 @@
     }
   }
 
-  function run (nest,state={}) {
+  function run (nest,state={},mock) {
     const scope = nest.slice()
     while (scope.length) {
       const code = scope.shift()
       if ('command' in code) {
         const command = code.command
-        const elem = document.getElementById(code.key)
+        const elem = mock || document.getElementById(code.key)
         const [op, ...args] = code.command.split(/ +/)
         const next = scope[0]
         const body = next && ('command' in next) ? null : scope.shift()
@@ -398,7 +397,7 @@
   }
 
   if (typeof module !== "undefined" && module !== null) {
-    module.exports = {expand}
+    module.exports = {expand,tree,format,run}
   }
 
 

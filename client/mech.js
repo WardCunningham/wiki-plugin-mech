@@ -114,7 +114,7 @@
   function click_emit ({elem,body,state}) {
     if(elem.innerHTML.match(/button/)) return
     if (!body?.length) return trouble(elem,'CLICK expects indented blocks to follow.')
-    elem.innerHTML += '<button style="border-width:0;">►</button>'
+    elem.innerHTML += '<button style="border-width:0;">▶</button>'
     elem.querySelector('button').addEventListener('click',event => {
       state.debug = event.shiftKey
       run(body,state)
@@ -275,7 +275,7 @@
     const count = args[0] || '1'
     if (!count.match(/^[1-9][0-9]?$/)) return trouble(elem,"TICK expects a count from 1 to 99")
     let clock = null
-    elem.innerHTML += '<button style="border-width:0;">►</button>'
+    elem.innerHTML += '<button style="border-width:0;">▶</button>'
     elem.querySelector('button').addEventListener('click',event => {
       state.debug = event.shiftKey
       if(clock){
@@ -384,6 +384,39 @@
       return {type:'markdown',text}})
   }
 
+  function show_emit({elem,command,args,state}) {
+    elem.innerHTML = command
+    let site,slug
+    if(args.length < 1) {
+      if(state.info) {
+        inspect(elem,'info',state)
+        site = state.info.domain
+        slug = state.info.slug
+        elem.innerHTML = command + ` ⇒ ${state.info.title}`
+      } else {
+        return trouble(elem,`SHOW expects a slug or site/slug to open in the lineup.`)
+      }
+    } else {
+      [site,slug] = args[0].includes('/')
+        ? args[0].split(/\//)
+        : [null,args[0]]
+    }
+    const lineup = [...document.querySelectorAll('.page')].map(e => e.id)
+    if(lineup.includes(slug)) return trouble(elem,`SHOW expects a page not already in the lineup.`)
+    const page = elem.closest('.page')
+    wiki.doInternalLink(slug,page,site)
+  }
+
+  function random_emit({elem,command,state}) {
+    if(!state.neighborhood) return trouble(elem,`RANDOM expected a neighborhood, like from NEIGHBORS.`)
+    inspect(elem,'neighborhood',state)
+    const infos = state.neighborhood
+    const many = infos.length
+    const one = Math.floor(Math.random()*many)
+    elem.innerHTML = command + ` ⇒ ${one} of ${many}`
+    state.info = infos[one]
+  }
+
 
 // C A T A L O G
 
@@ -402,7 +435,9 @@
     FORWARD: {emit:forward_emit},
     TURN:    {emit:turn_emit},
     FILE:    {emit:file_emit},
-    KWIC:    {emit:kwic_emit}
+    KWIC:    {emit:kwic_emit},
+    SHOW:    {emit:show_emit},
+    RANDOM:  {emit:random_emit}
   }
 
 

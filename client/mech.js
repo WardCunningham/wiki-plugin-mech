@@ -121,8 +121,10 @@
     })
   }
 
-  function hello_emit ({elem,args}) {
+  function hello_emit ({elem,args,state}) {
     const want = args[0] == 'world' ? ' 🌎' : ' 😀'
+    for (const key of Object.keys(state))
+      inspect(elem,key,state)
     elem.innerHTML += want
   }
 
@@ -331,23 +333,61 @@
   function file_emit ({elem,command,args,body,state}) {
     if(!('assets' in state)) return trouble(elem,`FILE expects state.assets, like from SOURCE assets.`)
     inspect(elem,'assets',state)
+
+  // [ { "id": "b2d5831168b4706b", "result":
+  //    { "pages/testing-file-mech":
+  //     { "//ward.dojo.fed.wiki/assets":
+  //      [ "KWIC-list+axe-files.txt", "KWIC-list-axe-files.tsv" ] } } } ]
+
+    const origin = '//'+window.location.host
+    const assets = state.assets.map(({id,result}) =>
+      Object.entries(result).map(([dir,paths]) =>
+        Object.entries(paths).map(([path,files]) =>
+          files.map(file => {
+            const assets = path.startsWith("//") ? path : `${origin}${path}`
+            const host = assets.replace(/\/assets$/,'')
+            const url = `${assets}/${dir}/${file}`
+            return {id,dir,path,host,file,url}
+          })))).flat(3)
+    if(state.debug) console.log({assets})
+
     if(args.length < 1) return trouble(elem,`FILE expects an argument, the dot suffix for desired files.`)
     if (!body?.length) return trouble(elem,'FILE expects indented blocks to follow.')
     const suffix = args[0]
-    const url = 'http://ward.dojo.fed.wiki/assets/pages/testing-file-mech/KWIC-list-axe-files.tsv'
-    fetch(url)
-      .then(res => res.text())
-      .then(text => {
-        elem.innerHTML = command + ` ⇒ ${text.length} bytes`
-        state.tsv = text
-        run(body,state)
-      })
+    const choices = assets.filter(asset => asset.file.endsWith(suffix))
+    const flag = choice => `<img width=12 src=${choices[choice].host+'/favicon.png'}>`
+    if(!choices) return trouble(elem,`FILE expects to find an asset with "${suffix}" suffix.`)
+    elem.innerHTML = command +
+      `<br><div class=choices style="border:1px solid black; background-color:#f8f8f8; padding:8px;" >${choices
+        .map((choice,i) =>
+          `<span data-choice=${i} style="cursor:pointer;">
+            ${flag(i)}
+            ${choice.file} ▶
+          </span>`)
+        .join("<br>\n")
+      }</div>`
+    elem.querySelector('.choices').addEventListener('click',event => {
+      if (!('choice' in event.target.dataset)) return
+      const url = choices[event.target.dataset.choice].url
+      // console.log(event.target)
+      // console.log(event.target.dataset.file)
+      // const url = 'http://ward.dojo.fed.wiki/assets/pages/testing-file-mech/KWIC-list-axe-files.tsv'
+      fetch(url)
+        .then(res => res.text())
+        .then(text => {
+          elem.innerHTML = command + ` ⇒ ${text.length} bytes`
+          state.tsv = text
+          console.log({text})
+          run(body,state)
+        })
+    })
   }
 
   function kwic_emit ({elem,command,args,body,state}) {
     const template = body && body[0]?.command
     if(template && !template.match(/\$[KW]/)) return trouble(elem,`KWIK expects $K or $W in link prototype.`)
     if(!('tsv' in state)) return trouble(elem,`KWIC expects a .tsv file, like from ASSETS .tsv.`)
+    inspect(elem,'tsv',state)
     const prefix = args[0] || 1
     const lines = state.tsv.trim().split(/\n/)
 

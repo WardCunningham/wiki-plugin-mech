@@ -192,6 +192,10 @@
       .join(", ")
     if (state.debug) console.log({topic,sources})
     elem.innerHTML = command + ' ⇒ ' + counts
+    // state.assets = ?
+    // state.aspect = ?
+    // state.region = ?
+    // state.marker = ?
     state[topic] = sources.map(({div,result}) => ({id:div.dataset.id, result}))
     if (body) run(body,state)
   }

@@ -113,7 +113,7 @@
 
   function click_emit ({elem,body,state}) {
     if(elem.innerHTML.match(/button/)) return
-    if (!body?.length) return trouble(elem,'CLICK expects indented blocks to follow.')
+    if (!body?.length) return trouble(elem,`CLICK expects indented blocks to follow.`)
     elem.innerHTML += '<button style="border-width:0;">▶</button>'
     elem.querySelector('button').addEventListener('click',event => {
       state.debug = event.shiftKey
@@ -147,7 +147,7 @@
     const datalog = state.page.story.find(item => item.type == 'datalog')
     if(!datalog) return trouble(elem, `Expect Datalog plugin in the page.`)
     const want = args[0]
-    if(!want) return trouble(elem, 'SENSOR needs a sensor name.')
+    if(!want) return trouble(elem, `SENSOR needs a sensor name.`)
     const sensor = datalog.text.split(/\n/)
       .map(line => line.split(/ +/))
       .filter(fields => fields[0] == 'SENSOR')
@@ -264,7 +264,7 @@
     elem.innerHTML = command
     const nodes = aspects.map(({graph}) => graph.nodes).flat()
     elem.innerHTML += ` ⇒ ${aspects.length} aspects, ${nodes.length} nodes`
-    if(steps.find(({graph}) => !graph)) trouble(elem,"WALK skipped sites with no links in sitemaps")
+    if(steps.find(({graph}) => !graph)) trouble(elem,`WALK skipped sites with no links in sitemaps`)
     const item = elem.closest('.item')
     item.classList.add('aspect-source')
     item.aspectData = () => aspects
@@ -273,9 +273,9 @@
 
   function tick_emit ({elem,args,body,state}) {
     if(elem.innerHTML.match(/button/)) return
-    if (!body?.length) return trouble(elem,'TICK expects indented blocks to follow.')
+    if (!body?.length) return trouble(elem,`TICK expects indented blocks to follow.`)
     const count = args[0] || '1'
-    if (!count.match(/^[1-9][0-9]?$/)) return trouble(elem,"TICK expects a count from 1 to 99")
+    if (!count.match(/^[1-9][0-9]?$/)) return trouble(elem,`TICK expects a count from 1 to 99`)
     let clock = null
     elem.innerHTML += '<button style="border-width:0;">▶</button>'
     elem.querySelector('button').addEventListener('click',event => {

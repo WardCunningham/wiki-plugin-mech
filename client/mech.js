@@ -204,8 +204,9 @@
   function preview_emit ({elem,command,args,state}) {
     const round = digits => (+digits).toFixed(7)
     const story = []
-    for (const arg of args) {
-      switch (arg) {
+    const types = args
+    for (const type of types) {
+      switch (type) {
       case 'map':
         if(!('marker' in state)) return trouble(elem,`"map" preview expects "marker" state, like from "SOURCE marker".`)
         inspect(elem,'marker',state)
@@ -239,7 +240,7 @@
         story.push({type:'paragraph',text})}
         break
       default:
-        return trouble(elem,`"${arg}" doesn't name an item we can preview`)
+        return trouble(elem,`"${type}" doesn't name an item we can preview`)
       }
     }
     const title = "Mech Preview" + (state.tick ? ` ${state.tick}` : '')

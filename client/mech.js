@@ -122,16 +122,17 @@
   }
 
   function hello_emit ({elem,args,state}) {
-    const want = args[0] == 'world' ? ' 🌎' : ' 😀'
+    const world = args[0] == 'world' ? ' 🌎' : ' 😀'
     for (const key of Object.keys(state))
       inspect(elem,key,state)
-    elem.innerHTML += want
+    elem.innerHTML += world
   }
 
   function from_emit ({elem,args,body,state}) {
     const line = elem.innerHTML
+    const url = args[0]
     elem.innerHTML = line + ' ⏳'
-    fetch(`//${args[0]}.json`)
+    fetch(`//${url}.json`)
       .then(res => res.json())
       .then(page => {
         state.page = page
@@ -146,13 +147,13 @@
     inspect(elem,'page',state)
     const datalog = state.page.story.find(item => item.type == 'datalog')
     if(!datalog) return trouble(elem, `Expect Datalog plugin in the page.`)
-    const want = args[0]
-    if(!want) return trouble(elem, `SENSOR needs a sensor name.`)
+    const device = args[0]
+    if(!device) return trouble(elem, `SENSOR needs a sensor name.`)
     const sensor = datalog.text.split(/\n/)
       .map(line => line.split(/ +/))
       .filter(fields => fields[0] == 'SENSOR')
-      .find(fields => fields[1] == want)
-    if(!sensor) return trouble(elem, `Expect to find "${want}" in Datalog.`)
+      .find(fields => fields[1] == device)
+    if(!sensor) return trouble(elem, `Expect to find "${device}" in Datalog.`)
     const url = sensor[2]
 
     const f = c => 9/5*(c/16)+32
@@ -323,14 +324,16 @@
   function forward_emit ({elem,command,args,state}) {
     if(args.length < 1) return trouble(elem,`FORWARD expects an argument, the number of steps to move a "turtle".`)
     if(!('turtle' in state)) state.turtle = new Turtle(elem)
-    const position = state.turtle.forward(+args[0])
+    const steps = args[0]
+    const position = state.turtle.forward(+steps)
     elem.innerHTML = command + ` ⇒ ${position.map(n => (n-200).toFixed(1)).join(', ')}`
   }
 
   function turn_emit ({elem,command,args,state}) {
     if(args.length < 1) return trouble(elem,`TURN expects an argument, the number of degrees to turn a "turtle".`)
     if(!('turtle' in state)) state.turtle = new Turtle(elem)
-    const direction = state.turtle.turn(+args[0])
+    const degrees = args[0]
+    const direction = state.turtle.turn(+degrees)
     elem.innerHTML = command + ` ⇒ ${direction}°`
   }
 
@@ -441,9 +444,10 @@
         return trouble(elem,`SHOW expects a slug or site/slug to open in the lineup.`)
       }
     } else {
-      [site,slug] = args[0].includes('/')
-        ? args[0].split(/\//)
-        : [null,args[0]]
+      const info = args[0]
+      [site,slug] = info.includes('/')
+        ? info.split(/\//)
+        : [null,info]
     }
     const lineup = [...document.querySelectorAll('.page')].map(e => e.id)
     if(lineup.includes(slug)) return trouble(elem,`SHOW expects a page not already in the lineup.`)

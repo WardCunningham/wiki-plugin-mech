@@ -83,7 +83,7 @@
     }
   }
 
-  function run (nest,state={},mock) {
+  async function run (nest,state={},mock) {
     const scope = nest.slice()
     while (scope.length) {
       const code = scope.shift()
@@ -96,14 +96,15 @@
         const stuff = {command,op,args,body,elem,state}
         if(state.debug) console.log(stuff)
         if (blocks[op])
-          blocks[op].emit.apply(null,[stuff])
+          await blocks[op].emit.apply(null,[stuff])
         else
           if (op.match(/^[A-Z]+$/))
             trouble(elem,`${op} doesn't name a block we know.`)
           else if (code.command.match(/\S/))
             trouble(elem, `Expected line to begin with all-caps keyword.`)
       } else if(typeof code == 'array') {
-        run(code,state)
+        console.warn(`this can't happen.`)
+        run(code,state) // when does this even happen?
       }
     }
   }
@@ -466,6 +467,34 @@
     state.info = infos[one]
   }
 
+  function sleep_emit({elem,command,args,body,state}) {
+    let count = args[0] || '1'
+    if (!count.match(/^[1-9][0-9]?$/)) return trouble(elem,`SLEEP expects seconds from 1 to 99`)
+    return new Promise(resolve => {
+      if(body)
+        run(body,state)
+          .then(result => if(state.debug) console.log(command,'children', result))
+      elem.innerHTML = command + ` ⇒ ${count} remain`
+      let clock = setInterval(()=> {
+        if(--count > 0)
+          elem.innerHTML = command + ` ⇒ ${count} remain`
+        else {
+          clearInterval(clock)
+          elem.innerHTML = command + ` ⇒ done`
+          if(state.debug) console.log(command, 'done')
+          resolve()
+        }
+      }, 1000)
+    })
+  }
+
+  function together_emit({elem,command,args,body,state}) {
+    if (!body) return trouble(elem,`TOGETHER expects indented commands to run together.`)
+    const children = body
+      .map(child => run([child],state))
+    return Promise.all(children)
+  }
+
 
 // C A T A L O G
 
@@ -486,7 +515,9 @@
     FILE:    {emit:file_emit},
     KWIC:    {emit:kwic_emit},
     SHOW:    {emit:show_emit},
-    RANDOM:  {emit:random_emit}
+    RANDOM:  {emit:random_emit},
+    SLEEP:   {emit:sleep_emit},
+    TOGETHER:{emit:together_emit}
   }
 
 

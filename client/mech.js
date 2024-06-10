@@ -473,7 +473,7 @@
     return new Promise(resolve => {
       if(body)
         run(body,state)
-          .then(result => if(state.debug) console.log(command,'children', result))
+          .then(result => {if(state.debug) console.log(command,'children', result)})
       elem.innerHTML = command + ` ⇒ ${count} remain`
       let clock = setInterval(()=> {
         if(--count > 0)

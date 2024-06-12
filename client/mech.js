@@ -499,6 +499,25 @@
     return Promise.all(children)
   }
 
+  // http://localhost:3000/plugin/mech/run/testing-mechs-synchronization/5e269010fc81aebe?args=WyJoZWxsbyIsIndvcmxkIl0
+  async function get_emit({elem,command,args,body,state}) {
+    if (!body) return trouble(elem,`GET expects indented commands to run on the server.`)
+    const site = state.context.site
+    const slug = state.context.slug
+    const itemId = state.context.itemId
+    const query = `args=${btoa(JSON.stringify(body))}`
+    const url = `//${site}/plugin/mech/run/${slug}/${itemId}?${query}`
+    elem.innerHTML = command + ` ⇒ in progress`
+    const start = Date.now()
+    try {
+      state.result = await fetch(url).then(res => res.ok ? res.json() : res.status)
+    } catch(err) {
+      return trouble(elem,`RUN failed with "${err.message}"`)
+    }
+    const elapsed = ((Date.now() - start)/1000).toFixed(3)
+    elem.innerHTML = command + ` ⇒ ${elapsed} seconds`
+  }
+
 
 // C A T A L O G
 
@@ -521,7 +540,8 @@
     SHOW:    {emit:show_emit},
     RANDOM:  {emit:random_emit},
     SLEEP:   {emit:sleep_emit},
-    TOGETHER:{emit:together_emit}
+    TOGETHER:{emit:together_emit},
+    GET:     {emit:get_emit}
   }
 
 

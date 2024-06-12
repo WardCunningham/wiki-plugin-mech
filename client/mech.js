@@ -509,10 +509,17 @@
     const url = `//${site}/plugin/mech/run/${slug}/${itemId}?${query}`
     elem.innerHTML = command + ` ⇒ in progress`
     const start = Date.now()
+    let result
     try {
-      state.result = await fetch(url).then(res => res.ok ? res.json() : res.status)
+      result = await fetch(url).then(res => res.ok ? res.json() : res.status)
     } catch(err) {
       return trouble(elem,`RUN failed with "${err.message}"`)
+    }
+    state.result = result
+    for(const arg of result.args.flat(9)){
+      const elem = document.getElementById(arg.key)
+      if('status' in arg) elem.innerHTML = arg.command + ` ⇒ ${arg.status}`
+      if('trouble' in arg) trouble(elem,arg.trouble)
     }
     const elapsed = ((Date.now() - start)/1000).toFixed(3)
     elem.innerHTML = command + ` ⇒ ${elapsed} seconds`

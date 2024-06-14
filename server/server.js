@@ -11,7 +11,7 @@
     var app = params.app,
         argv = params.argv
 
-    return app.get('/plugin/mech/run/:slug([a-z-]+)/:itemId', async (req, res) => {
+    return app.get('/plugin/mech/run/:slug([a-z-]+)/:itemId', (req, res, next) => {
       console.log(req.params)
       try {
         const slug = req.params.slug
@@ -24,12 +24,12 @@
         //   return res.json({err,item,args});
         // })
         const context = {path}
-        const state = {context}
+        const state = {context,debug:true}
         run(args,state)
-        return res.json({args,state})
-
+          .then(() => {return res.json({args,state})})
+          .catch(err => {console.log(err); return res.json({err:err.message+' from promise'})})
       } catch(err) {
-        return res.json({err:err.message})
+        return res.json({err:err.message+' from try'})
       }
     })
   }
@@ -60,7 +60,7 @@
         const stuff = {command,op,args,body,elem,state}
         if(state.debug) console.log(stuff)
         if (blocks[op])
-          blocks[op].emit.apply(null,[stuff])
+          await blocks[op].emit.apply(null,[stuff])
         else
           if (op.match(/^[A-Z]+$/))
             trouble(elem,`${op} doesn't name a block we know.`)
@@ -85,12 +85,26 @@
     status(elem,uptime)
   }
 
+  function sleep_emit ({elem,command,args,body,state}) {
+    let count = args[0] || '1'
+    if (!count.match(/^[1-9][0-9]?$/)) return trouble(elem,`SLEEP expects seconds from 1 to 99`)
+    return new Promise(resolve => {
+      if(body)
+        run(body,state)
+          .then(result => {if(state.debug) console.log(command,'children', result)})
+      setTimeout(() => {
+        resolve()
+      },1000*count)
+    })
+  }
+
 
   // C A T A L O G
 
   const blocks = {
     HELLO:   {emit:hello_emit},
-    UPTIME:  {emit:uptime_emit}
+    UPTIME:  {emit:uptime_emit},
+    SLEEP:   {emit:sleep_emit}
   }
 
 

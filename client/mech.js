@@ -236,6 +236,11 @@
         inspect(elem,'items',state)
         story.push(...state.items)
         break
+      case 'page':
+        if(!('page' in state)) return trouble(elem,`"page" preview expects "page" state, like from "FROM".`)
+        inspect(elem,'page',state)
+        story.push(...state.page.story)
+        break
       case 'synopsis':
         {const text = `This page created with Mech command: "${command}". See [[${state.context.title}]].`
         story.push({type:'paragraph',text,id:state.context.itemId})}
@@ -282,30 +287,42 @@
     state.aspect = [{id:item.dataset.id,result:aspects}]
   }
 
-  function tick_emit ({elem,args,body,state}) {
+  function tick_emit ({elem,command,args,body,state}) {
     if(elem.innerHTML.match(/button/)) return
     if (!body?.length) return trouble(elem,`TICK expects indented blocks to follow.`)
     const count = args[0] || '1'
     if (!count.match(/^[1-9][0-9]?$/)) return trouble(elem,`TICK expects a count from 1 to 99`)
     let clock = null
-    elem.innerHTML += '<button style="border-width:0;">▶</button>'
-    elem.querySelector('button').addEventListener('click',event => {
+    ready()
+    function ready () {
+      elem.innerHTML = command+'<button style="border-width:0;">▶</button>'
+      elem.querySelector('button').addEventListener('click',start)
+    }
+    function start (event) {
       state.debug = event.shiftKey
+      const status = ticks => {elem.innerHTML = command + ` ⇒ ${ticks} remaining`}
       if(clock){
         clock = clearInterval(clock)
         delete state.tick
       } else {
+        let working
         state.tick = +count
-        run(body,state)
+        status(state.tick)
+        working = true; run(body,state).then(() => working = false)
         clock = setInterval(()=>{
+          if(working) return
           if(state.debug) console.log({tick:state.tick})
-          if(('tick' in state) && --state.tick > 0)
-            run(body,state)
-          else
+          if(('tick' in state) && --state.tick > 0) {
+            status(state.tick)
+            working = true; run(body,state).then(() => working = false)
+          }
+          else {
             clock = clearInterval(clock)
+            ready()
+          }
         },1000)
       }
-    })
+    }
   }
 
   function until_emit ({elem,command,args,body,state}) {
@@ -450,7 +467,7 @@
         return trouble(elem,`SHOW expects a slug or site/slug to open in the lineup.`)
       }
     } else {
-      const info = args[0]
+      const info = args[0];
       [site,slug] = info.includes('/')
         ? info.split(/\//)
         : [null,info]
@@ -512,6 +529,7 @@
     let result
     try {
       result = await fetch(url).then(res => res.ok ? res.json() : res.status)
+      if('err' in result) return trouble(elem,`RUN received error "${result.err}"`)
     } catch(err) {
       return trouble(elem,`RUN failed with "${err.message}"`)
     }

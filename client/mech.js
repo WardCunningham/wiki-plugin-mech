@@ -522,7 +522,7 @@
     const site = state.context.site
     const slug = state.context.slug
     const itemId = state.context.itemId
-    const query = `args=${btoa(JSON.stringify(body))}`
+    const query = `mech=${btoa(JSON.stringify(body))}`
     const url = `//${site}/plugin/mech/run/${slug}/${itemId}?${query}`
     elem.innerHTML = command + ` ⇒ in progress`
     const start = Date.now()
@@ -534,7 +534,7 @@
       return trouble(elem,`RUN failed with "${err.message}"`)
     }
     state.result = result
-    for(const arg of result.args.flat(9)){
+    for(const arg of result.mech.flat(9)){
       const elem = document.getElementById(arg.key)
       if('status' in arg) elem.innerHTML = arg.command + ` ⇒ ${arg.status}`
       if('trouble' in arg) trouble(elem,arg.trouble)

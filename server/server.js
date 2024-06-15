@@ -5,6 +5,7 @@
 (function() {
 
   const fs = require('fs')
+  const path = require('path')
   const process = require('process')
 
   function startServer(params) {
@@ -16,17 +17,16 @@
       try {
         const slug = req.params.slug
         const itemId = req.params.itemId
-        const args = JSON.parse(atob(req.query.args || 'W10='))
-        const path = `${argv.db}/${slug}`
+        const mech = JSON.parse(atob(req.query.mech || 'W10='))
         // fs.readFile(path,(err,data) => {
         //   const page = JSON.parse(data)
         //   const item = page.story.find(item => item.id == itemId) || null
-        //   return res.json({err,item,args});
+        //   return res.json({err,item,mech});
         // })
-        const context = {path}
-        const state = {context,debug:true}
-        run(args,state)
-          .then(() => {return res.json({args,state})})
+        const context = {argv,slug}
+        const state = {context}
+        run(mech,state)
+          .then(() => {delete state.context; return res.json({mech,state})})
           .catch(err => {console.log(err); return res.json({err:err.message+' from promise'})})
       } catch(err) {
         return res.json({err:err.message+' from try'})
@@ -98,13 +98,39 @@
     })
   }
 
+  async function commons_emit ({elem,args,state}) {
+    const readdir = dir => new Promise((res,rej) =>
+      fs.readdir(dir,(e,v) => e ? rej(e) : res(v)));
+    const stat = file => new Promise((res,rej) =>
+      fs.stat(file,(e,v) => e ? rej(e) : res(v)));
+    const tally = async dir => {
+      const count = {files:0,bytes:0}
+      const items = await readdir(dir)
+      for(const item of items) {
+        const itemPath = path.join(dir, item)
+        const stats = await stat(itemPath)
+        if (state.debug) console.log({itemPath,stats})
+        if (stats.isFile()) {
+          count.files++
+          count.bytes+=stats.size
+        }
+      }
+      return count
+    }
+    const all = await tally(state.context.argv.commons)
+    const here = await tally(path.join(state.context.argv.data,'assets','plugins','image'))
+    state.commons = {all,here}
+    status(elem,`${(all.bytes/1000000).toFixed(3)} mb in ${all.files} files`)
+  }
+
 
   // C A T A L O G
 
   const blocks = {
     HELLO:   {emit:hello_emit},
     UPTIME:  {emit:uptime_emit},
-    SLEEP:   {emit:sleep_emit}
+    SLEEP:   {emit:sleep_emit},
+    COMMONS: {emit:commons_emit}
   }
 
 

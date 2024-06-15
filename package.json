@@ -1,6 +1,6 @@
 {
   "name": "wiki-plugin-mech",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "description": "Federated Wiki - Mechanism Scripting Plugin",
   "keywords": [
     "mech",

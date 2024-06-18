@@ -24,13 +24,8 @@
         const itemId = req.params.itemId
         const mech = JSON.parse(atob(req.query.mech || 'W10='))
         const share = JSON.parse(atob(req.query.state ||'W10='))
-        // fs.readFile(path,(err,data) => {
-        //   const page = JSON.parse(data)
-        //   const item = page.story.find(item => item.id == itemId) || null
-        //   return res.json({err,item,mech});
-        // })
         const context = {argv,slug}
-        const state = Object.assign(share,{context,debug:true})
+        const state = Object.assign(share,{context})
         run(mech,state)
           .then(() => {delete state.context; return res.json({mech,state})})
           .catch(err => {console.log(err); return res.json({err:err.message+' from promise'})})

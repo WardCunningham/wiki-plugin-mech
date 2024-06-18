@@ -557,6 +557,8 @@
   }
 
   function delta_emit({elem,command,args,body,state}) {
+    const copy = obj => JSON.parse(JSON.stringify(obj))
+    const size = obj => JSON.stringify(obj).length
     if (args.length < 1) return trouble(elem,`DELTA expects argument, "have" or "apply" on client.`)
     if (body) return trouble(elem,`DELTA doesn't expect indented input.`)
     switch (args[0]) {
@@ -567,9 +569,15 @@
       elem.innerHTML = command + ` ⇒ ${new Date(state.recent).toLocaleString()}`
       break
     case 'apply':
+      if(!('actions' in state)) return trouble(elem,`DELTA apply expect "actions" as input.`)
       inspect(elem,'actions',state)
-      state.page = state.context.page
-      trouble(elem,`DELTA expects to apply actions soon.`)
+      const page = copy(state.context.page)
+      const before = size(page)
+      for (const action of state.actions)
+        apply(page,action)
+      state.page = page
+      const after = size(page)
+      elem.innerHTML = command + ` ⇒ ∆ ${((after-before)/before*100).toFixed(1)}%`
       break
     default:
       trouble(elem,`DELTA doesn't know "${args[0]}".`)
@@ -825,5 +833,84 @@
       this.direction += degrees
       return this.direction}
   }
+
+  // adapted from wiki-client/lib/revision.coffee
+
+  // This module interprets journal actions in order to update
+  // a story or even regenerate a complete story from some or
+  // all of a journal.
+
+  function apply(page, action) {
+    const order = () => {
+      return (page.story || []).map(item => item?.id);
+    };
+
+    const add = (after, item) => {
+      const index = order().indexOf(after) + 1;
+      page.story.splice(index, 0, item);
+    };
+
+    const remove = () => {
+      const index = order().indexOf(action.id);
+      if (index !== -1) {
+        page.story.splice(index, 1);
+      }
+    };
+
+    page.story = page.story || [];
+
+    switch (action.type) {
+      case 'create':
+        if (action.item) {
+          if (action.item.title != null) {
+            page.title = action.item.title;
+          }
+          if (action.item.story != null) {
+            page.story = action.item.story.slice();
+          }
+        }
+        break;
+      case 'add':
+        add(action.after, action.item);
+        break;
+      case 'edit':
+        const index = order().indexOf(action.id);
+        if (index !== -1) {
+          page.story.splice(index, 1, action.item);
+        } else {
+          page.story.push(action.item);
+        }
+        break;
+      case 'move':
+        // construct relative addresses from absolute order
+        const moveIndex = action.order.indexOf(action.id);
+        const after = action.order[moveIndex - 1];
+        const item = page.story[order().indexOf(action.id)];
+        remove();
+        add(after, item);
+        break;
+      case 'remove':
+        remove();
+        break;
+    }
+
+    page.journal = page.journal || [];
+    if (action.fork) {
+      // implicit fork
+      page.journal.push({ type: 'fork', site: action.fork, date: action.date - 1 });
+    }
+    page.journal.push(action);
+  }
+
+  function create(revIndex, data) {
+    revIndex = +revIndex;
+    const revJournal = data.journal.slice(0, revIndex + 1);
+    const revPage = { title: data.title, story: [] };
+    for (const action of revJournal) {
+      apply(revPage, action || {});
+    }
+    return revPage;
+  }
+
 
 }).call(this)

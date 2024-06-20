@@ -519,11 +519,22 @@
   // http://localhost:3000/plugin/mech/run/testing-mechs-synchronization/5e269010fc81aebe?args=WyJoZWxsbyIsIndvcmxkIl0
   async function get_emit({elem,command,args,body,state}) {
     if (!body) return trouble(elem,`GET expects indented commands to run on the server.`)
-    const site = state.context.site
+    let share = {}
+    let where = state.context.site
+    if (args.length) {
+      for(const arg of args) {
+        if (arg in state) {
+          inspect(elem,arg,state)
+          share[arg] = state[arg]}
+        else if (arg.match(/\./)) where=arg
+        else {return trouble(elem,`GET expected "${arg}" to name state or site.`)}
+      }
+    }
+    // const site = state.context.site
     const slug = state.context.slug
     const itemId = state.context.itemId
-    const query = `mech=${btoa(JSON.stringify(body))}`
-    const url = `//${site}/plugin/mech/run/${slug}/${itemId}?${query}`
+    const query = `mech=${btoa(JSON.stringify(body))}&state=${btoa(JSON.stringify(share))}`
+    const url = `//${where}/plugin/mech/run/${slug}/${itemId}?${query}`
     elem.innerHTML = command + ` ⇒ in progress`
     const start = Date.now()
     let result
@@ -539,8 +550,38 @@
       if('status' in arg) elem.innerHTML = arg.command + ` ⇒ ${arg.status}`
       if('trouble' in arg) trouble(elem,arg.trouble)
     }
+    if('debug' in result.state) delete result.state.debug
+    Object.assign(state,result.state)
     const elapsed = ((Date.now() - start)/1000).toFixed(3)
     elem.innerHTML = command + ` ⇒ ${elapsed} seconds`
+  }
+
+  function delta_emit({elem,command,args,body,state}) {
+    const copy = obj => JSON.parse(JSON.stringify(obj))
+    const size = obj => JSON.stringify(obj).length
+    if (args.length < 1) return trouble(elem,`DELTA expects argument, "have" or "apply" on client.`)
+    if (body) return trouble(elem,`DELTA doesn't expect indented input.`)
+    switch (args[0]) {
+    case 'have':
+      const edits = state.context.page.journal
+        .filter(item => item.type != 'fork')
+      state.recent = edits[edits.length-1].date
+      elem.innerHTML = command + ` ⇒ ${new Date(state.recent).toLocaleString()}`
+      break
+    case 'apply':
+      if(!('actions' in state)) return trouble(elem,`DELTA apply expect "actions" as input.`)
+      inspect(elem,'actions',state)
+      const page = copy(state.context.page)
+      const before = size(page)
+      for (const action of state.actions)
+        apply(page,action)
+      state.page = page
+      const after = size(page)
+      elem.innerHTML = command + ` ⇒ ∆ ${((after-before)/before*100).toFixed(1)}%`
+      break
+    default:
+      trouble(elem,`DELTA doesn't know "${args[0]}".`)
+    }
   }
 
 
@@ -566,7 +607,8 @@
     RANDOM:  {emit:random_emit},
     SLEEP:   {emit:sleep_emit},
     TOGETHER:{emit:together_emit},
-    GET:     {emit:get_emit}
+    GET:     {emit:get_emit},
+    DELTA:   {emit:delta_emit}
   }
 
 
@@ -791,5 +833,84 @@
       this.direction += degrees
       return this.direction}
   }
+
+  // adapted from wiki-client/lib/revision.coffee
+
+  // This module interprets journal actions in order to update
+  // a story or even regenerate a complete story from some or
+  // all of a journal.
+
+  function apply(page, action) {
+    const order = () => {
+      return (page.story || []).map(item => item?.id);
+    };
+
+    const add = (after, item) => {
+      const index = order().indexOf(after) + 1;
+      page.story.splice(index, 0, item);
+    };
+
+    const remove = () => {
+      const index = order().indexOf(action.id);
+      if (index !== -1) {
+        page.story.splice(index, 1);
+      }
+    };
+
+    page.story = page.story || [];
+
+    switch (action.type) {
+      case 'create':
+        if (action.item) {
+          if (action.item.title != null) {
+            page.title = action.item.title;
+          }
+          if (action.item.story != null) {
+            page.story = action.item.story.slice();
+          }
+        }
+        break;
+      case 'add':
+        add(action.after, action.item);
+        break;
+      case 'edit':
+        const index = order().indexOf(action.id);
+        if (index !== -1) {
+          page.story.splice(index, 1, action.item);
+        } else {
+          page.story.push(action.item);
+        }
+        break;
+      case 'move':
+        // construct relative addresses from absolute order
+        const moveIndex = action.order.indexOf(action.id);
+        const after = action.order[moveIndex - 1];
+        const item = page.story[order().indexOf(action.id)];
+        remove();
+        add(after, item);
+        break;
+      case 'remove':
+        remove();
+        break;
+    }
+
+    page.journal = page.journal || [];
+    if (action.fork) {
+      // implicit fork
+      page.journal.push({ type: 'fork', site: action.fork, date: action.date - 1 });
+    }
+    page.journal.push(action);
+  }
+
+  function create(revIndex, data) {
+    revIndex = +revIndex;
+    const revJournal = data.journal.slice(0, revIndex + 1);
+    const revPage = { title: data.title, story: [] };
+    for (const action of revJournal) {
+      apply(revPage, action || {});
+    }
+    return revPage;
+  }
+
 
 }).call(this)

@@ -8,27 +8,26 @@
   const path = require('path')
   const process = require('process')
 
+  function cors (req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*')
+    next()
+  }
+
   function startServer(params) {
     var app = params.app,
         argv = params.argv
 
-    return app.get('/plugin/mech/run/:slug([a-z-]+)/:itemId', (req, res, next) => {
+    return app.get('/plugin/mech/run/:slug([a-z-]+)/:itemId', cors, (req, res, next) => {
       console.log(req.params)
       try {
         const slug = req.params.slug
         const itemId = req.params.itemId
         const mech = JSON.parse(atob(req.query.mech || 'W10='))
-        // fs.readFile(path,(err,data) => {
-        //   const page = JSON.parse(data)
-        //   const item = page.story.find(item => item.id == itemId) || null
-        //   return res.json({err,item,mech});
-        // })
+        const share = JSON.parse(atob(req.query.state ||'W10='))
         const context = {argv,slug}
-        const state = {context}
+        const state = Object.assign(share,{context})
 
         valueStream([state]).pipe(run(mech,state)).pipe(respondJSON(res, mech))
-
-        // return res.json({args,state})
 
       } catch(err) {
         res.json({err:err.message})
@@ -177,13 +176,28 @@
     }
   }
 
+  async function delta_emit ({elem,args,state}) {
+    return asyncMapStream(function (data, next) {
+      const readFile = path => new Promise((res,rej) =>
+        fs.readFile(path,(e,v) => e ? rej(e) : res(v)));
+      if(!state.recent) return trouble(elem,`DELTA expects "recent" update time in state.`)
+      const file = path.join(state.context.argv.db,state.context.slug)
+      const page = JSON.parse(await readFile(file))
+      next(null, page.journal
+        .filter(action => action.date > state.recent)
+      )
+      status(elem,`${state.actions.length} recent actions`)
+    })
+  }
+
   // C A T A L O G
 
   const blocks = {
     HELLO:   {emit:hello_emit},
     UPTIME:  {emit:uptime_emit},
     SLEEP:   {emit:sleep_emit},
-    COMMONS: {emit:commons_emit}
+    COMMONS: {emit:commons_emit},
+    DELTA:   {emit:delta_emit}
   }
 
   // S T R E A M S

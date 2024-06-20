@@ -2,7 +2,7 @@
 // These handlers are launched with the wiki server.
 
 
-(function() {
+(async function() {
 
   const fs = require('fs')
   const path = require('path')
@@ -26,13 +26,12 @@
         const context = {argv,slug}
         const state = {context}
 
-        valueStream([state]).pipe(run(args,state)).pipe(respondJSON(res, args))
+        valueStream([state]).pipe(run(mech,state)).pipe(respondJSON(res, mech))
 
         // return res.json({args,state})
 
       } catch(err) {
         res.json({err:err.message})
-        next(err)
       }
     })
   }
@@ -105,41 +104,78 @@
   function sleep_emit ({elem,command,args,body,state}) {
     let count = args[0] || '1'
     if (!count.match(/^[1-9][0-9]?$/)) return trouble(elem,`SLEEP expects seconds from 1 to 99`)
-    return new Promise(resolve => {
-      if(body)
-        run(body,state)
-          .then(result => {if(state.debug) console.log(command,'children', result)})
-      setTimeout(() => {
-        resolve()
-      },1000*count)
+    return new AsyncMapStream(function (data, next) {
+      let dreams = run(children, state)
+      setTimeout(function () {
+        dreams.abort()
+        next(null, data)
+      }, 1000 * count)
     })
   }
 
-  async function commons_emit ({elem,args,state}) {
-    const readdir = dir => new Promise((res,rej) =>
-      fs.readdir(dir,(e,v) => e ? rej(e) : res(v)));
-    const stat = file => new Promise((res,rej) =>
-      fs.stat(file,(e,v) => e ? rej(e) : res(v)));
-    const tally = async dir => {
-      const count = {files:0,bytes:0}
-      const items = await readdir(dir)
-      for(const item of items) {
-        const itemPath = path.join(dir, item)
-        const stats = await stat(itemPath)
-        if (state.debug) console.log({itemPath,stats})
-        if (stats.isFile()) {
-          count.files++
-          count.bytes+=stats.size
+  function commons_emit ({elem,args,state}) {
+    return asyncMapStream(async function (data, next) {
+      const readdir = dir => new Promise((res,rej) =>
+        fs.readdir(dir,(e,v) => e ? rej(e) : res(v)));
+      const stat = file => new Promise((res,rej) =>
+        fs.stat(file,(e,v) => e ? rej(e) : res(v)));
+      const tally = async dir => {
+        const count = {files:0,bytes:0}
+        const items = await readdir(dir)
+        for(const item of items) {
+          const itemPath = path.join(dir, item)
+          const stats = await stat(itemPath)
+          if (state.debug) console.log({itemPath,stats})
+          if (stats.isFile()) {
+            count.files++
+            count.bytes+=stats.size
+          }
         }
+        return count
       }
-      return count
-    }
-    const all = await tally(state.context.argv.commons)
-    const here = await tally(path.join(state.context.argv.data,'assets','plugins','image'))
-    state.commons = {all,here}
-    status(elem,`${(all.bytes/1000000).toFixed(3)} mb in ${all.files} files`)
+      try {
+        const all = await tally(state.context.argv.commons)
+        const here = await tally(path.join(state.context.argv.data,'assets','plugins','image'))
+        state.commons = {all,here}
+        status(elem,`${(all.bytes/1000000).toFixed(3)} mb in ${all.files} files`)
+        next(null, here)
+      } catch (e) {
+        next(err)
+      }
+    })
   }
 
+  function readDirStream () {
+    const stream = asyncMap(function (data, next) {
+      fs.readdir(data, next)
+    })
+    return stream
+  }
+
+  function statStream () {
+    const stream = asyncMap(function (data, next) {
+      fs.stat(data, next)
+    })
+
+    return stream
+  }
+
+  function flat () {
+    const stream = base()
+    let pool = []
+
+    base.write = function (data) {
+      pool = pool.concat(data)
+      this.paused = this.sink.paused
+      if (!this.paused) this.resume()
+    }
+
+    base.resume = function () {
+      while (!this.sink.paused && !this.ended && pool.length > 0) {
+        this.sink.write(pool.shift())
+      }
+    }
+  }
 
   // C A T A L O G
 
@@ -279,9 +315,9 @@
     return stream
   }
 
-  function respondJSON (res, args) {
+  function respondJSON (res, mech) {
     let stream = collect((err, items) => {
-      res.json({args, items})
+      res.json({mech, state:items})
     })
     return stream
   }

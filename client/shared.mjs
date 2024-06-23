@@ -10,7 +10,7 @@ const {
   asyncMapStream
 } = await import('./push-s.mjs')
 
-function createRunner (blocks, getElem = function (a) { return a }) {
+function createRunner (blocks, trouble, getElem = function (a) { return a }) {
   return function run (nest, state={}, mock) {
     const origin = mapStream()
     let source = origin
@@ -37,7 +37,6 @@ function createRunner (blocks, getElem = function (a) { return a }) {
         run(code,state) // when does this even happen?
       }
     }
-
     return origin
   }
 }

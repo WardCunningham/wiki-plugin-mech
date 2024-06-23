@@ -149,16 +149,27 @@ function flat () {
   const stream = base()
   let pool = []
 
-  base.write = function (data) {
+  stream.write = function (data) {
     pool = pool.concat(data)
-    this.paused = this.sink.paused
+    console.log({pool})
+    this.paused = this.sink && this.sink.paused
     if (!this.paused) this.resume()
   }
 
-  base.resume = function () {
-    while (!this.sink.paused && !this.ended && pool.length > 0) {
+  stream.resume = function () {
+    while (!this.ended && this.sink && !this.sink.paused && pool.length > 0) {
       this.sink.write(pool.shift())
     }
   }
+  return stream
+}
+
+function fetchJSON () {
+  return asyncMapStream(function (url, next) {
+    fetch(url)
+      .then((res) => res.json())
+      .then((json) => next(null, json))
+      .catch((err) => next(err))
+  })
 }
 

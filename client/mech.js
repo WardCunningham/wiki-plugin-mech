@@ -1,5 +1,54 @@
 
-(function() {
+(async function() {
+
+  if (typeof window !== "undefined" && window !== null) {
+    window.plugins.mech = {emit, bind}
+  }
+
+  const {
+    base,
+    flat,
+    respondJSON,
+    collect,
+    valueStream,
+    devnull,
+    filterStream,
+    mapStream,
+    asyncMapStream,
+    fetchJSON
+  } = await import('/plugins/mech/push-s.mjs')
+
+  const { createRunner } = await import('/plugins/mech/shared.mjs')
+
+// C A T A L O G
+
+  const blocks = {
+    CLICK:   {emit:click_emit},
+    HELLO:   {emit:hello_emit},
+    //FROM:    {emit:from_emit},
+    // SENSOR:  {emit:sensor_emit},
+    // REPORT:  {emit:report_emit},
+    // SOURCE:  {emit:source_emit},
+    // PREVIEW: {emit:preview_emit},
+    // NEIGHBORS:{emit:neighbors_emit},
+    // WALK:    {emit:walk_emit},
+    // TICK:    {emit:tick_emit},
+    // UNTIL:   {emit:until_emit},
+    // FORWARD: {emit:forward_emit},
+    // TURN:    {emit:turn_emit},
+    // FILE:    {emit:file_emit},
+    // KWIC:    {emit:kwic_emit},
+    // SHOW:    {emit:show_emit},
+    // RANDOM:  {emit:random_emit},
+    // SLEEP:   {emit:sleep_emit},
+    // TOGETHER:{emit:together_emit},
+    // GET:     {emit:get_emit},
+    // DELTA:   {emit:delta_emit}
+  }
+
+  var run = createRunner(blocks, trouble, function (code) {
+    return document.getElementById(code.key)
+  })
 
   const uniq = (value, index, self) => self.indexOf(value) === index
 
@@ -83,50 +132,43 @@
     }
   }
 
-  async function run (nest,state={},mock) {
-    const scope = nest.slice()
-    while (scope.length) {
-      const code = scope.shift()
-      if ('command' in code) {
-        const command = code.command
-        const elem = mock || document.getElementById(code.key)
-        const [op, ...args] = code.command.split(/ +/)
-        const next = scope[0]
-        const body = next && ('command' in next) ? null : scope.shift()
-        const stuff = {command,op,args,body,elem,state}
-        if(state.debug) console.log(stuff)
-        if (blocks[op])
-          await blocks[op].emit.apply(null,[stuff])
-        else
-          if (op.match(/^[A-Z]+$/))
-            trouble(elem,`${op} doesn't name a block we know.`)
-          else if (code.command.match(/\S/))
-            trouble(elem, `Expected line to begin with all-caps keyword.`)
-      } else if(typeof code == 'array') {
-        console.warn(`this can't happen.`)
-        run(code,state) // when does this even happen?
-      }
-    }
-  }
-
-
 // B L O C K S
 
   function click_emit ({elem,body,state}) {
-    if(elem.innerHTML.match(/button/)) return
-    if (!body?.length) return trouble(elem,`CLICK expects indented blocks to follow.`)
-    elem.innerHTML += '<button style="border-width:0;">▶</button>'
-    elem.querySelector('button').addEventListener('click',event => {
-      state.debug = event.shiftKey
-      run(body,state)
-    })
+    let pool = flat()
+    if (!body?.length) {
+      trouble(elem,`CLICK expects indented blocks to follow.`)
+      return pool
+    }
+    let started = false
+    let count = 0
+    const meta = mapStream()
+    meta.resume = function () {
+      if(!(this.paused = this.sink.paused) && this.source) {
+        this.source.resume()
+      }
+      if(elem.innerHTML.match(/button/)) return data
+      elem.innerHTML += '<button style="border-width:0;">▶</button>'
+      elem.querySelector('button').addEventListener('click',event => {
+        state.debug = event.shiftKey
+        if (!started) {
+          pool.pipe(run(body,state)).pipe(devnull())
+          started = true
+        }
+        pool.write(++count)
+      })
+    }
+    return meta
   }
 
   function hello_emit ({elem,args,state}) {
-    const world = args[0] == 'world' ? ' 🌎' : ' 😀'
-    for (const key of Object.keys(state))
-      inspect(elem,key,state)
-    elem.innerHTML += world
+    return mapStream(function (data) {
+      const world = args[0] == 'world' ? ' 🌎' : ' 😀'
+      for (const key of Object.keys(state))
+        inspect(elem,key,state)
+      elem.innerHTML += world
+      return data + world
+    })
   }
 
   function from_emit ({elem,args,body,state}) {
@@ -585,36 +627,9 @@
   }
 
 
-// C A T A L O G
-
-  const blocks = {
-    CLICK:   {emit:click_emit},
-    HELLO:   {emit:hello_emit},
-    FROM:    {emit:from_emit},
-    SENSOR:  {emit:sensor_emit},
-    REPORT:  {emit:report_emit},
-    SOURCE:  {emit:source_emit},
-    PREVIEW: {emit:preview_emit},
-    NEIGHBORS:{emit:neighbors_emit},
-    WALK:    {emit:walk_emit},
-    TICK:    {emit:tick_emit},
-    UNTIL:   {emit:until_emit},
-    FORWARD: {emit:forward_emit},
-    TURN:    {emit:turn_emit},
-    FILE:    {emit:file_emit},
-    KWIC:    {emit:kwic_emit},
-    SHOW:    {emit:show_emit},
-    RANDOM:  {emit:random_emit},
-    SLEEP:   {emit:sleep_emit},
-    TOGETHER:{emit:together_emit},
-    GET:     {emit:get_emit},
-    DELTA:   {emit:delta_emit}
-  }
-
-
 // P L U G I N
 
-  function emit($item, item) {
+  async function emit($item, item) {
     const lines = item.text.split(/\n/)
     const nest = tree(lines,[],0)
     const html = format(nest)
@@ -632,17 +647,23 @@
     }
     const state = {context}
     $item.append(`<div style="background-color:#eee;padding:15px;border-top:8px;">${html}</div>`)
-    run(nest,state)
+    // Handles async initialization problems 
+    runsoon()
+    function runsoon () {
+      if (typeof run !== 'function') {
+        setTimeout(runsoon, 1000)
+      } else {
+        let pool = flat()
+        pool.write(null)
+        pool.pipe(run(nest,state)).pipe(devnull())
+      }
+    }
   }
 
   function bind($item, item) {
     return $item.dblclick(() => {
       return wiki.textEditor($item, item);
     })
-  }
-
-  if (typeof window !== "undefined" && window !== null) {
-    window.plugins.mech = {emit, bind}
   }
 
   if (typeof module !== "undefined" && module !== null) {

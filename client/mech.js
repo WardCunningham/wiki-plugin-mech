@@ -30,8 +30,9 @@
     SENSOR:  {emit:sensor_emit},
     REPORT:  {emit:report_emit},
     TEE:     {emit: tee_emit},
-    // SOURCE:  {emit:source_emit},
-    // PREVIEW: {emit:preview_emit},
+    SOURCE:  {emit:source_emit},
+    STORY:   {emit:story_emit},
+    PREVIEW: {emit:preview_emit},
     // NEIGHBORS:{emit:neighbors_emit},
     // WALK:    {emit:walk_emit},
     // TICK:    {emit:tick_emit},
@@ -43,7 +44,7 @@
     // SHOW:    {emit:show_emit},
     // RANDOM:  {emit:random_emit},
     // SLEEP:   {emit:sleep_emit},
-    // TOGETHER:{emit:together_emit},
+    TOGETHER:{emit:together_emit},
     // GET:     {emit:get_emit},
     // DELTA:   {emit:delta_emit}
   }
@@ -103,10 +104,13 @@
   }
 
   function trouble(elem,message) {
-    if(elem.innerText.match(/✖︎/)) return
+    const pass = mapStream()
+    if(elem.innerText.match(/✖︎/)) return pass
     elem.innerHTML += `<button style="border-width:0;color:red;">✖︎</button>`
     elem.querySelector('button').addEventListener('click',event => {
       elem.outerHTML += `<span style="width:80%;color:gray;">${message}</span>` })
+
+    return pass
   }
 
   function inspect(elem,key,state) {
@@ -268,65 +272,73 @@
     // state.aspect = ?
     // state.region = ?
     // state.marker = ?
-    state[topic] = sources.map(({div,result}) => ({id:div.dataset.id, result}))
-    if (body) run(body,state)
+    return valueStream([{ topic, sources: sources.map(({div,result}) => ({id:div.dataset.id, result }))}])
+  }
+
+  function story_emit ({elem,command,args,state}) {
+    const round = digits => (+digits).toFixed(7)
+    const storyify = mapStream(function (data) {
+      const story = []
+      const type = data.topic
+      switch (type) {
+        case 'marker':
+          inspect(elem,'marker',state)
+          const text = data.sources
+            .map(marker => [marker.result])
+            .flat(2)
+            .map(latlon => `${round(latlon.lat)}, ${round(latlon.lon)} ${latlon.label||''}`)
+            .filter(uniq)
+            .join("\n")
+          story.push({type:'map',text})
+          break
+        case 'graph':
+          inspect(elem,'aspect',state)
+          for (const {div,result} of data.sources) {
+            for (const {name,graph} of result) {
+              if(state.debug) console.log({div,result,name,graph})
+              story.push({type:'paragraph',text:name})
+              story.push({type:'graphviz',text:dotify(graph)})
+            }
+            story.push({type:'pagefold',text:'.'})
+          }
+          break
+        // case 'items':
+        //   if(!('items' in state)) return trouble(elem,`"graph" preview expects "items" state, like from "KWIC".`)
+        //   inspect(elem,'items',state)
+        //   story.push(...state.items)
+        //   break
+        // case 'page':
+        //   if(!('page' in state)) return trouble(elem,`"page" preview expects "page" state, like from "FROM".`)
+        //   inspect(elem,'page',state)
+        //   story.push(...state.page.story)
+        //   break
+        default:
+          return trouble(elem,`"${type}" doesn't name an item we can preview`)
+      }
+      return story
+    })
+    return storyify
   }
 
   function preview_emit ({elem,command,args,state}) {
-    const round = digits => (+digits).toFixed(7)
     const story = []
     const types = args
-    for (const type of types) {
-      switch (type) {
-      case 'map':
-        if(!('marker' in state)) return trouble(elem,`"map" preview expects "marker" state, like from "SOURCE marker".`)
-        inspect(elem,'marker',state)
-        const text = state.marker
-          .map(marker => [marker.result])
-          .flat(2)
-          .map(latlon => `${round(latlon.lat)}, ${round(latlon.lon)} ${latlon.label||''}`)
-          .filter(uniq)
-          .join("\n")
-        story.push({type:'map',text})
-        break
-      case 'graph':
-        if(!('aspect' in state)) return trouble(elem,`"graph" preview expects "aspect" state, like from "SOURCE aspect".`)
-        inspect(elem,'aspect',state)
-        for (const {div,result} of state.aspect) {
-          for (const {name,graph} of result) {
-            if(state.debug) console.log({div,result,name,graph})
-            story.push({type:'paragraph',text:name})
-            story.push({type:'graphviz',text:dotify(graph)})
-          }
-          story.push({type:'pagefold',text:'.'})
-        }
-        break
-      case 'items':
-        if(!('items' in state)) return trouble(elem,`"graph" preview expects "items" state, like from "KWIC".`)
-        inspect(elem,'items',state)
-        story.push(...state.items)
-        break
-      case 'page':
-        if(!('page' in state)) return trouble(elem,`"page" preview expects "page" state, like from "FROM".`)
-        inspect(elem,'page',state)
-        story.push(...state.page.story)
-        break
-      case 'synopsis':
-        {const text = `This page created with Mech command: "${command}". See [[${state.context.title}]].`
-        story.push({type:'paragraph',text,id:state.context.itemId})}
-        break
-      default:
-        return trouble(elem,`"${type}" doesn't name an item we can preview`)
+    return collect(function (err, story) {
+      story = story.flat(1)
+      console.log({ story })
+      const title = "Mech Preview" + (state.tick ? ` ${state.tick}` : '')
+      if (args.includes('synopsis')) {
+        const text = `This page created with Mech command: "${command}". See [[${state.context.title}]].`
+        story.unshift({type:'paragraph',text,id:state.context.itemId})
       }
-    }
-    const title = "Mech Preview" + (state.tick ? ` ${state.tick}` : '')
-    const page = {title,story}
-    for (const item of page.story) item.id ||= (Math.random()*10**20).toFixed(0)
-    const item = JSON.parse(JSON.stringify(page))
-    const date = Date.now()
-    page.journal = [{type:'create', date, item}]
-    const options = {$page:$(elem.closest('.page'))}
-    wiki.showResult(wiki.newPage(page), options)
+      const page = {title,story}
+      for (const item of page.story) item.id ||= (Math.random()*10**20).toFixed(0)
+      const item = JSON.parse(JSON.stringify(page))
+      const date = Date.now()
+      page.journal = [{type:'create', date, item}]
+      const options = {$page:$(elem.closest('.page'))}
+      wiki.showResult(wiki.newPage(page), options)
+    })
   }
 
   function neighbors_emit ({elem,command,args,state}) {
@@ -580,10 +592,20 @@
   }
 
   function together_emit({elem,command,args,body,state}) {
+    const pool = flat()
     if (!body) return trouble(elem,`TOGETHER expects indented commands to run together.`)
-    const children = body
-      .map(child => run([child],state))
-    return Promise.all(children)
+    const children = body.map(child => {
+      const origin = flat()
+      origin.write(null)
+      const exit = base()
+      exit.write = function (data) {
+        pool.write(data)
+      }
+      exit.paused = false
+      origin.pipe(run([child],state)).pipe(exit)
+      return origin
+    })
+    return pool
   }
 
   // http://localhost:3000/plugin/mech/run/testing-mechs-synchronization/5e269010fc81aebe?args=WyJoZWxsbyIsIndvcmxkIl0

@@ -32,12 +32,13 @@ function base () {
     },
 
     pipe: function (sink) {
-      this.sink = sink
-      sink.source = this
-      if (!sink.paused) this.resume()
-      while (sink.sink) {
-        sink = sink.sink
+      let end = this
+      while (end.sink != null) {
+        end = end.sink
       }
+      end.sink = sink
+      sink.source = end
+      if (!sink.paused) end.resume()
       return sink
     },
     

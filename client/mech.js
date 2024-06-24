@@ -1,5 +1,57 @@
 
-(function() {
+(async function() {
+
+  if (typeof window !== "undefined" && window !== null) {
+    window.plugins.mech = {emit, bind}
+  }
+
+  const {
+    base,
+    flat,
+    respondJSON,
+    collect,
+    valueStream,
+    devnull,
+    filterStream,
+    mapStream,
+    asyncMapStream,
+    fetchJSON
+  } = await import('/plugins/mech/push-s.mjs')
+
+  const { createRunner } = await import('/plugins/mech/shared.mjs')
+
+// C A T A L O G
+
+  const blocks = {
+    CLICK:   {emit:click_emit},
+    HELLO:   {emit:hello_emit},
+    VALUES:  {emit:values_emit},
+    FETCHJSON: {emit: fetchJSON_emit},
+    SENSOR:  {emit:sensor_emit},
+    REPORT:  {emit:report_emit},
+    TEE:     {emit: tee_emit},
+    SOURCE:  {emit:source_emit},
+    STORY:   {emit:story_emit},
+    PREVIEW: {emit:preview_emit},
+    // NEIGHBORS:{emit:neighbors_emit},
+    // WALK:    {emit:walk_emit},
+    // TICK:    {emit:tick_emit},
+    // UNTIL:   {emit:until_emit},
+    // FORWARD: {emit:forward_emit},
+    // TURN:    {emit:turn_emit},
+    // FILE:    {emit:file_emit},
+    // KWIC:    {emit:kwic_emit},
+    // SHOW:    {emit:show_emit},
+    // RANDOM:  {emit:random_emit},
+    // SLEEP:   {emit:sleep_emit},
+    TOGETHER:{emit:together_emit},
+    // GET:     {emit:get_emit},
+    // DELTA:   {emit:delta_emit}
+  }
+
+  var run = createRunner(blocks, trouble, function (code) {
+    return document.getElementById(code.key)
+  })
 
   const uniq = (value, index, self) => self.indexOf(value) === index
 
@@ -52,10 +104,13 @@
   }
 
   function trouble(elem,message) {
-    if(elem.innerText.match(/✖︎/)) return
+    const pass = mapStream()
+    if(elem.innerText.match(/✖︎/)) return pass
     elem.innerHTML += `<button style="border-width:0;color:red;">✖︎</button>`
     elem.querySelector('button').addEventListener('click',event => {
       elem.outerHTML += `<span style="width:80%;color:gray;">${message}</span>` })
+
+    return pass
   }
 
   function inspect(elem,key,state) {
@@ -83,50 +138,65 @@
     }
   }
 
-  async function run (nest,state={},mock) {
-    const scope = nest.slice()
-    while (scope.length) {
-      const code = scope.shift()
-      if ('command' in code) {
-        const command = code.command
-        const elem = mock || document.getElementById(code.key)
-        const [op, ...args] = code.command.split(/ +/)
-        const next = scope[0]
-        const body = next && ('command' in next) ? null : scope.shift()
-        const stuff = {command,op,args,body,elem,state}
-        if(state.debug) console.log(stuff)
-        if (blocks[op])
-          await blocks[op].emit.apply(null,[stuff])
-        else
-          if (op.match(/^[A-Z]+$/))
-            trouble(elem,`${op} doesn't name a block we know.`)
-          else if (code.command.match(/\S/))
-            trouble(elem, `Expected line to begin with all-caps keyword.`)
-      } else if(typeof code == 'array') {
-        console.warn(`this can't happen.`)
-        run(code,state) // when does this even happen?
-      }
-    }
-  }
-
-
 // B L O C K S
 
   function click_emit ({elem,body,state}) {
-    if(elem.innerHTML.match(/button/)) return
-    if (!body?.length) return trouble(elem,`CLICK expects indented blocks to follow.`)
-    elem.innerHTML += '<button style="border-width:0;">▶</button>'
-    elem.querySelector('button').addEventListener('click',event => {
-      state.debug = event.shiftKey
-      run(body,state)
+    let pool = flat()
+    if (!body?.length) {
+      trouble(elem,`CLICK expects indented blocks to follow.`)
+      return pool
+    }
+    let started = false
+    let last = null
+    const meta = mapStream(function (data) {
+      last = data
+      return data
     })
+    meta.resume = function () {
+      if(!(this.paused = this.sink.paused) && this.source) {
+        this.source.resume()
+      }
+      if(elem.innerHTML.match(/button/)) return data
+      elem.innerHTML += '<button style="border-width:0;">▶</button>'
+      elem.querySelector('button').addEventListener('click',event => {
+        state.debug = event.shiftKey
+        if (!started) {
+          pool.pipe(run(body,state)).pipe(devnull())
+          started = true
+        }
+        pool.write(last)
+      })
+    }
+    return meta
   }
 
   function hello_emit ({elem,args,state}) {
-    const world = args[0] == 'world' ? ' 🌎' : ' 😀'
-    for (const key of Object.keys(state))
-      inspect(elem,key,state)
-    elem.innerHTML += world
+    return mapStream(function (data) {
+      const world = args[0] == 'world' ? ' 🌎' : ' 😀'
+      for (const key of Object.keys(state))
+        inspect(elem,key,state)
+      elem.innerHTML += world
+      return data + world
+    })
+  }
+
+  function values_emit ({elem,args,body,state}) {
+    return valueStream(args)
+  }
+
+  function fetchJSON_emit ({elem,args,body,state}) {
+    return fetchJSON()
+  }
+
+  function tee_emit ({elem,args,body,state}) {
+    let running = run(body, state)
+    let pool = flat()
+    pool.pipe(running).pipe(devnull())
+    return mapStream(function (data) {
+      console.log({ data })
+      pool.write(data)
+      return data
+    })
   }
 
   function from_emit ({elem,args,body,state}) {
@@ -143,39 +213,43 @@
   }
 
   function sensor_emit ({elem,args,body,state}) {
-    const line = elem.innerHTML.replaceAll(/ ⌛/g,'')
-    if(!('page' in state)) return trouble(elem,`Expect "page" as with FROM.`)
-    inspect(elem,'page',state)
-    const datalog = state.page.story.find(item => item.type == 'datalog')
-    if(!datalog) return trouble(elem, `Expect Datalog plugin in the page.`)
-    const device = args[0]
-    if(!device) return trouble(elem, `SENSOR needs a sensor name.`)
-    const sensor = datalog.text.split(/\n/)
-      .map(line => line.split(/ +/))
-      .filter(fields => fields[0] == 'SENSOR')
-      .find(fields => fields[1] == device)
-    if(!sensor) return trouble(elem, `Expect to find "${device}" in Datalog.`)
-    const url = sensor[2]
+    return asyncMapStream(function (page, next) {
+      const line = elem.innerHTML.replaceAll(/ ⌛/g,'')
+      if(!(page != null && page.story)) return trouble(elem,`Expect a wiki page JSON`)
+      inspect(elem,'page',page)
+      const datalog = page.story.find(item => item.type == 'datalog')
+      if(!datalog) return trouble(elem, `Expect Datalog plugin in the page.`)
+      const device = args[0]
+      if(!device) return trouble(elem, `SENSOR needs a sensor name.`)
+      const sensor = datalog.text.split(/\n/)
+        .map(line => line.split(/ +/))
+        .filter(fields => fields[0] == 'SENSOR')
+        .find(fields => fields[1] == device)
+      if(!sensor) return trouble(elem, `Expect to find "${device}" in Datalog.`)
+      const url = sensor[2]
 
-    const f = c => 9/5*(c/16)+32
-    const avg = a => a.reduce((s,e)=>s+e,0)/a.length
-    elem.innerHTML = line + ' ⏳'
-    fetch(url)
-      .then (res => res.json())
-      .then (data => {
-        if(state.debug) console.log({sensor,data})
-        elem.innerHTML = line + ' ⌛'
-        const value = f(avg(Object.values(data)))
-        state.temperature = `${value.toFixed(2)}°F`
-        run(body,state)
-      })
+      const f = c => 9/5*(c/16)+32
+      const avg = a => a.reduce((s,e)=>s+e,0)/a.length
+      elem.innerHTML = line + ' ⏳'
+      fetch(url)
+        .then (res => res.json())
+        .then (data => {
+          if(state.debug) console.log({sensor,data})
+          elem.innerHTML = line + ' ⌛'
+          const value = f(avg(Object.values(data)))
+          next(null,`${value.toFixed(2)}°F`)
+        })
+      .catch(e => next(e))
+    })
   }
 
   function report_emit ({elem,command,state}) {
-    const value = state?.temperature
-    if (!value) return trouble(elem,`Expect data, as from SENSOR.`)
-    inspect(elem,'temperature',state)
-    elem.innerHTML = command + `<br><font face=Arial size=32>${value}</font>`
+    return mapStream(function (data) {
+      if (!data) return trouble(elem,`Expect data, as from SENSOR.`)
+      inspect(elem,'temperature',data)
+      elem.innerHTML += `<br><font face=Arial size=32>${data}</font>`
+      return data
+    })
   }
 
   function source_emit ({elem,command,args,body,state}) {
@@ -198,65 +272,73 @@
     // state.aspect = ?
     // state.region = ?
     // state.marker = ?
-    state[topic] = sources.map(({div,result}) => ({id:div.dataset.id, result}))
-    if (body) run(body,state)
+    return valueStream([{ topic, sources: sources.map(({div,result}) => ({id:div.dataset.id, result }))}])
+  }
+
+  function story_emit ({elem,command,args,state}) {
+    const round = digits => (+digits).toFixed(7)
+    const storyify = mapStream(function (data) {
+      const story = []
+      const type = data.topic
+      switch (type) {
+        case 'marker':
+          inspect(elem,'marker',state)
+          const text = data.sources
+            .map(marker => [marker.result])
+            .flat(2)
+            .map(latlon => `${round(latlon.lat)}, ${round(latlon.lon)} ${latlon.label||''}`)
+            .filter(uniq)
+            .join("\n")
+          story.push({type:'map',text})
+          break
+        case 'graph':
+          inspect(elem,'aspect',state)
+          for (const {div,result} of data.sources) {
+            for (const {name,graph} of result) {
+              if(state.debug) console.log({div,result,name,graph})
+              story.push({type:'paragraph',text:name})
+              story.push({type:'graphviz',text:dotify(graph)})
+            }
+            story.push({type:'pagefold',text:'.'})
+          }
+          break
+        // case 'items':
+        //   if(!('items' in state)) return trouble(elem,`"graph" preview expects "items" state, like from "KWIC".`)
+        //   inspect(elem,'items',state)
+        //   story.push(...state.items)
+        //   break
+        // case 'page':
+        //   if(!('page' in state)) return trouble(elem,`"page" preview expects "page" state, like from "FROM".`)
+        //   inspect(elem,'page',state)
+        //   story.push(...state.page.story)
+        //   break
+        default:
+          return trouble(elem,`"${type}" doesn't name an item we can preview`)
+      }
+      return story
+    })
+    return storyify
   }
 
   function preview_emit ({elem,command,args,state}) {
-    const round = digits => (+digits).toFixed(7)
     const story = []
     const types = args
-    for (const type of types) {
-      switch (type) {
-      case 'map':
-        if(!('marker' in state)) return trouble(elem,`"map" preview expects "marker" state, like from "SOURCE marker".`)
-        inspect(elem,'marker',state)
-        const text = state.marker
-          .map(marker => [marker.result])
-          .flat(2)
-          .map(latlon => `${round(latlon.lat)}, ${round(latlon.lon)} ${latlon.label||''}`)
-          .filter(uniq)
-          .join("\n")
-        story.push({type:'map',text})
-        break
-      case 'graph':
-        if(!('aspect' in state)) return trouble(elem,`"graph" preview expects "aspect" state, like from "SOURCE aspect".`)
-        inspect(elem,'aspect',state)
-        for (const {div,result} of state.aspect) {
-          for (const {name,graph} of result) {
-            if(state.debug) console.log({div,result,name,graph})
-            story.push({type:'paragraph',text:name})
-            story.push({type:'graphviz',text:dotify(graph)})
-          }
-          story.push({type:'pagefold',text:'.'})
-        }
-        break
-      case 'items':
-        if(!('items' in state)) return trouble(elem,`"graph" preview expects "items" state, like from "KWIC".`)
-        inspect(elem,'items',state)
-        story.push(...state.items)
-        break
-      case 'page':
-        if(!('page' in state)) return trouble(elem,`"page" preview expects "page" state, like from "FROM".`)
-        inspect(elem,'page',state)
-        story.push(...state.page.story)
-        break
-      case 'synopsis':
-        {const text = `This page created with Mech command: "${command}". See [[${state.context.title}]].`
-        story.push({type:'paragraph',text,id:state.context.itemId})}
-        break
-      default:
-        return trouble(elem,`"${type}" doesn't name an item we can preview`)
+    return collect(function (err, story) {
+      story = story.flat(1)
+      console.log({ story })
+      const title = "Mech Preview" + (state.tick ? ` ${state.tick}` : '')
+      if (args.includes('synopsis')) {
+        const text = `This page created with Mech command: "${command}". See [[${state.context.title}]].`
+        story.unshift({type:'paragraph',text,id:state.context.itemId})
       }
-    }
-    const title = "Mech Preview" + (state.tick ? ` ${state.tick}` : '')
-    const page = {title,story}
-    for (const item of page.story) item.id ||= (Math.random()*10**20).toFixed(0)
-    const item = JSON.parse(JSON.stringify(page))
-    const date = Date.now()
-    page.journal = [{type:'create', date, item}]
-    const options = {$page:$(elem.closest('.page'))}
-    wiki.showResult(wiki.newPage(page), options)
+      const page = {title,story}
+      for (const item of page.story) item.id ||= (Math.random()*10**20).toFixed(0)
+      const item = JSON.parse(JSON.stringify(page))
+      const date = Date.now()
+      page.journal = [{type:'create', date, item}]
+      const options = {$page:$(elem.closest('.page'))}
+      wiki.showResult(wiki.newPage(page), options)
+    })
   }
 
   function neighbors_emit ({elem,command,args,state}) {
@@ -510,10 +592,20 @@
   }
 
   function together_emit({elem,command,args,body,state}) {
+    const pool = flat()
     if (!body) return trouble(elem,`TOGETHER expects indented commands to run together.`)
-    const children = body
-      .map(child => run([child],state))
-    return Promise.all(children)
+    const children = body.map(child => {
+      const origin = flat()
+      origin.write(null)
+      const exit = base()
+      exit.write = function (data) {
+        pool.write(data)
+      }
+      exit.paused = false
+      origin.pipe(run([child],state)).pipe(exit)
+      return origin
+    })
+    return pool
   }
 
   // http://localhost:3000/plugin/mech/run/testing-mechs-synchronization/5e269010fc81aebe?args=WyJoZWxsbyIsIndvcmxkIl0
@@ -585,36 +677,9 @@
   }
 
 
-// C A T A L O G
-
-  const blocks = {
-    CLICK:   {emit:click_emit},
-    HELLO:   {emit:hello_emit},
-    FROM:    {emit:from_emit},
-    SENSOR:  {emit:sensor_emit},
-    REPORT:  {emit:report_emit},
-    SOURCE:  {emit:source_emit},
-    PREVIEW: {emit:preview_emit},
-    NEIGHBORS:{emit:neighbors_emit},
-    WALK:    {emit:walk_emit},
-    TICK:    {emit:tick_emit},
-    UNTIL:   {emit:until_emit},
-    FORWARD: {emit:forward_emit},
-    TURN:    {emit:turn_emit},
-    FILE:    {emit:file_emit},
-    KWIC:    {emit:kwic_emit},
-    SHOW:    {emit:show_emit},
-    RANDOM:  {emit:random_emit},
-    SLEEP:   {emit:sleep_emit},
-    TOGETHER:{emit:together_emit},
-    GET:     {emit:get_emit},
-    DELTA:   {emit:delta_emit}
-  }
-
-
 // P L U G I N
 
-  function emit($item, item) {
+  async function emit($item, item) {
     const lines = item.text.split(/\n/)
     const nest = tree(lines,[],0)
     const html = format(nest)
@@ -632,17 +697,23 @@
     }
     const state = {context}
     $item.append(`<div style="background-color:#eee;padding:15px;border-top:8px;">${html}</div>`)
-    run(nest,state)
+    // Handles async initialization problems 
+    runsoon()
+    function runsoon () {
+      if (typeof run !== 'function') {
+        setTimeout(runsoon, 1000)
+      } else {
+        let pool = flat()
+        pool.write(null)
+        pool.pipe(run(nest,state)).pipe(devnull())
+      }
+    }
   }
 
   function bind($item, item) {
     return $item.dblclick(() => {
       return wiki.textEditor($item, item);
     })
-  }
-
-  if (typeof window !== "undefined" && window !== null) {
-    window.plugins.mech = {emit, bind}
   }
 
   if (typeof module !== "undefined" && module !== null) {

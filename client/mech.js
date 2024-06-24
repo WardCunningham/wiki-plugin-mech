@@ -25,9 +25,11 @@
   const blocks = {
     CLICK:   {emit:click_emit},
     HELLO:   {emit:hello_emit},
-    //FROM:    {emit:from_emit},
-    // SENSOR:  {emit:sensor_emit},
-    // REPORT:  {emit:report_emit},
+    VALUES:  {emit:values_emit},
+    FETCHJSON: {emit: fetchJSON_emit},
+    SENSOR:  {emit:sensor_emit},
+    REPORT:  {emit:report_emit},
+    TEE:     {emit: tee_emit},
     // SOURCE:  {emit:source_emit},
     // PREVIEW: {emit:preview_emit},
     // NEIGHBORS:{emit:neighbors_emit},
@@ -141,8 +143,11 @@
       return pool
     }
     let started = false
-    let count = 0
-    const meta = mapStream()
+    let last = null
+    const meta = mapStream(function (data) {
+      last = data
+      return data
+    })
     meta.resume = function () {
       if(!(this.paused = this.sink.paused) && this.source) {
         this.source.resume()
@@ -155,7 +160,7 @@
           pool.pipe(run(body,state)).pipe(devnull())
           started = true
         }
-        pool.write(++count)
+        pool.write(last)
       })
     }
     return meta
@@ -168,6 +173,25 @@
         inspect(elem,key,state)
       elem.innerHTML += world
       return data + world
+    })
+  }
+
+  function values_emit ({elem,args,body,state}) {
+    return valueStream(args)
+  }
+
+  function fetchJSON_emit ({elem,args,body,state}) {
+    return fetchJSON()
+  }
+
+  function tee_emit ({elem,args,body,state}) {
+    let running = run(body, state)
+    let pool = flat()
+    pool.pipe(running).pipe(devnull())
+    return mapStream(function (data) {
+      console.log({ data })
+      pool.write(data)
+      return data
     })
   }
 
@@ -185,39 +209,43 @@
   }
 
   function sensor_emit ({elem,args,body,state}) {
-    const line = elem.innerHTML.replaceAll(/ ⌛/g,'')
-    if(!('page' in state)) return trouble(elem,`Expect "page" as with FROM.`)
-    inspect(elem,'page',state)
-    const datalog = state.page.story.find(item => item.type == 'datalog')
-    if(!datalog) return trouble(elem, `Expect Datalog plugin in the page.`)
-    const device = args[0]
-    if(!device) return trouble(elem, `SENSOR needs a sensor name.`)
-    const sensor = datalog.text.split(/\n/)
-      .map(line => line.split(/ +/))
-      .filter(fields => fields[0] == 'SENSOR')
-      .find(fields => fields[1] == device)
-    if(!sensor) return trouble(elem, `Expect to find "${device}" in Datalog.`)
-    const url = sensor[2]
+    return asyncMapStream(function (page, next) {
+      const line = elem.innerHTML.replaceAll(/ ⌛/g,'')
+      if(!(page != null && page.story)) return trouble(elem,`Expect a wiki page JSON`)
+      inspect(elem,'page',page)
+      const datalog = page.story.find(item => item.type == 'datalog')
+      if(!datalog) return trouble(elem, `Expect Datalog plugin in the page.`)
+      const device = args[0]
+      if(!device) return trouble(elem, `SENSOR needs a sensor name.`)
+      const sensor = datalog.text.split(/\n/)
+        .map(line => line.split(/ +/))
+        .filter(fields => fields[0] == 'SENSOR')
+        .find(fields => fields[1] == device)
+      if(!sensor) return trouble(elem, `Expect to find "${device}" in Datalog.`)
+      const url = sensor[2]
 
-    const f = c => 9/5*(c/16)+32
-    const avg = a => a.reduce((s,e)=>s+e,0)/a.length
-    elem.innerHTML = line + ' ⏳'
-    fetch(url)
-      .then (res => res.json())
-      .then (data => {
-        if(state.debug) console.log({sensor,data})
-        elem.innerHTML = line + ' ⌛'
-        const value = f(avg(Object.values(data)))
-        state.temperature = `${value.toFixed(2)}°F`
-        run(body,state)
-      })
+      const f = c => 9/5*(c/16)+32
+      const avg = a => a.reduce((s,e)=>s+e,0)/a.length
+      elem.innerHTML = line + ' ⏳'
+      fetch(url)
+        .then (res => res.json())
+        .then (data => {
+          if(state.debug) console.log({sensor,data})
+          elem.innerHTML = line + ' ⌛'
+          const value = f(avg(Object.values(data)))
+          next(null,`${value.toFixed(2)}°F`)
+        })
+      .catch(e => next(e))
+    })
   }
 
   function report_emit ({elem,command,state}) {
-    const value = state?.temperature
-    if (!value) return trouble(elem,`Expect data, as from SENSOR.`)
-    inspect(elem,'temperature',state)
-    elem.innerHTML = command + `<br><font face=Arial size=32>${value}</font>`
+    return mapStream(function (data) {
+      if (!data) return trouble(elem,`Expect data, as from SENSOR.`)
+      inspect(elem,'temperature',data)
+      elem.innerHTML += `<br><font face=Arial size=32>${data}</font>`
+      return data
+    })
   }
 
   function source_emit ({elem,command,args,body,state}) {

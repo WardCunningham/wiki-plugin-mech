@@ -8,7 +8,8 @@ export {
   devnull,
   filterStream,
   mapStream,
-  asyncMapStream
+  asyncMapStream,
+  fetchJSON
 }
 
 // S T R E A M S

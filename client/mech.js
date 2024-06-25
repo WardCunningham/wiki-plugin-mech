@@ -584,6 +584,22 @@
     }
   }
 
+  function roster_emit({elem,command,state}) {
+    if(!state.neighborhood) return trouble(elem,`ROSTER expected a neighborhood, like from NEIGHBORS.`)
+    inspect(elem,'neighborhood',state)
+    const infos = state.neighborhood
+    const sites = infos
+      .map(info => info.domain)
+      .filter(uniq)
+    const any = array => array[Math.floor(Math.random()*array.length)]
+    console.log(infos)
+    const items = [
+      {type:'roster', text:"Mech\n"+sites.join("\n")},
+      {type:'activity', text:`ROSTER Mech\nSINCE 30 days`}]
+    elem.innerHTML = command + ` ⇒ ${sites.length} sites`
+    state.items = items
+  }
+
 
 // C A T A L O G
 
@@ -608,7 +624,8 @@
     SLEEP:   {emit:sleep_emit},
     TOGETHER:{emit:together_emit},
     GET:     {emit:get_emit},
-    DELTA:   {emit:delta_emit}
+    DELTA:   {emit:delta_emit},
+    ROSTER:  {emit:roster_emit}
   }
 
 

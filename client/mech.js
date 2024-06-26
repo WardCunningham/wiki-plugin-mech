@@ -600,6 +600,21 @@
     state.items = items
   }
 
+  function lineup_emit({elem,command,state}) {
+    const items = [...document.querySelectorAll('.page')]
+      .map(div => {
+        const $page = $(div)
+        const page = $page.data('data')
+        const site = $page.data('site') || location.host
+        const slug = $page.attr('id').split('_')[0]
+        const title = page.title || 'Empty'
+        const text = page.story[0]?.text||'empty'
+        return {type:'reference',site,slug,title,text}
+      })
+    elem.innerHTML = command + ` ⇒ ${items.length} pages`
+    state.items = items
+  }
+
 
 // C A T A L O G
 
@@ -625,7 +640,8 @@
     TOGETHER:{emit:together_emit},
     GET:     {emit:get_emit},
     DELTA:   {emit:delta_emit},
-    ROSTER:  {emit:roster_emit}
+    ROSTER:  {emit:roster_emit},
+    LINEUP:  {emit:lineup_emit}
   }
 
 

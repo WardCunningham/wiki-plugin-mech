@@ -272,7 +272,7 @@
   }
 
   function walk_emit ({elem,command,args,state}) {
-    if(!('neighborhood' in state)) return trouble(elem,`FILE expects state.neighborhood, like from NEIGHBORS.`)
+    if(!('neighborhood' in state)) return trouble(elem,`WALK expects state.neighborhood, like from NEIGHBORS.`)
     inspect(elem,'neighborhood',state)
     const steps = walks(state.neighborhood)
     const aspects = steps.filter(({graph})=>graph)
@@ -592,7 +592,7 @@
       .map(info => info.domain)
       .filter(uniq)
     const any = array => array[Math.floor(Math.random()*array.length)]
-    console.log(infos)
+    if(state.debug) console.log(infos)
     const items = [
       {type:'roster', text:"Mech\n"+sites.join("\n")},
       {type:'activity', text:`ROSTER Mech\nSINCE 30 days`}]
@@ -805,7 +805,7 @@
         const start = rand(here)
         done.add(start.slug)
         node(start)
-        for (n=5;n>0;n--) {
+        for (let n=5;n>0;n--) {
           try {
             const slugs = links(nid)
             const slug = rand(slugs)

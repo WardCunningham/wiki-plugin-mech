@@ -274,7 +274,8 @@
   function walk_emit ({elem,command,args,state}) {
     if(!('neighborhood' in state)) return trouble(elem,`WALK expects state.neighborhood, like from NEIGHBORS.`)
     inspect(elem,'neighborhood',state)
-    const steps = walks(state.neighborhood)
+    const way = (command.match(/\b(steps|days|weeks|months|hubs)\b/) || ['steps'])[0]
+    const steps = walks(way,state.neighborhood)
     const aspects = steps.filter(({graph})=>graph)
     if(state.debug) console.log({steps})
     elem.innerHTML = command
@@ -284,7 +285,8 @@
     const item = elem.closest('.item')
     item.classList.add('aspect-source')
     item.aspectData = () => aspects
-    state.aspect = [{id:item.dataset.id,result:aspects}]
+    if (aspects.length)
+      state.aspect = [...(state.aspect||[]), {id:item.dataset.id,result:aspects}]
   }
 
   function tick_emit ({elem,command,args,body,state}) {
@@ -777,14 +779,22 @@
   }
 
   // inspired by aspects-of-recent-changes/roster-graphs.html
-  function walks(neighborhood) {
+  function walks(way,neighborhood) {
     const prob = n => Math.floor(n * Math.abs(Math.random()-Math.random()))
     const rand = a => a[prob(a.length)]
     const domains = neighborhood
       .map(info => info.domain)
       .filter(uniq)
-    return domains
-      .map(domain => {
+    switch(way) {
+      case 'steps': return steps()
+      case 'days': return periods(1)
+      case 'weeks': return periods(7)
+      case 'months': return periods(30)
+      case 'hubs': return hubs()
+    }
+
+    function steps() {
+      return domains.map(domain => {
         const name = domain.split('.').slice(0,3).join('.')
         const done = new Set()
         const graph = new Graph()
@@ -803,6 +813,7 @@
         const rel = (here,there) => graph.addRel('',here,there)
         const links = nid => graph.nodes[nid].props.links.filter(slug => !done.has(slug))
         const start = rand(here)
+        // const start = find('welcome-visitors')
         done.add(start.slug)
         node(start)
         for (let n=5;n>0;n--) {
@@ -816,6 +827,79 @@
         }
         return {name,graph}
       })
+    }
+
+    function periods(days) {
+      const interval = days*24*60*60*1000
+      const iota = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+      const dates = iota.map(n => Date.now()-n*interval)
+      const aspects = []
+      for(const stop of dates) {
+        const start = stop-interval
+        const name = new Date(stop).toLocaleDateString()
+        // const done = new Set()
+        const graph = new Graph()
+        const find = slug => neighborhood.find(info => info.slug == slug)
+        const node = info => {
+          return graph.addUniqNode('',{
+            name:info.title.replaceAll(/ /g,"\n"),
+            title:info.title,
+            site:info.domain
+          })
+        }
+        const here = neighborhood
+          .filter(info => info.date < stop && info.date >= start)
+          .filter(info => !(info.links && Object.keys(info.links).length > 5))
+        if(here.length) {
+          for (const info of here) {
+            const nid = node(info)
+            for (const link in (info.links||{})) {
+              const linked = find(link)
+              if(linked)
+                graph.addRel('',nid,node(linked))
+            }
+          }
+          aspects.push({name,graph})
+        }
+      }
+      return aspects
+    }
+
+    function hubs() {
+      const aspects = []
+      const hits = {}
+      for (const info of neighborhood)
+        if(info.links)
+          for(const link in info.links)
+            hits[link] = (hits[link]||0) + 1
+      const hubs = Object.entries(hits)
+        .sort((a,b) => b[1]-a[1])
+        .slice(0,10)
+      console.log({hits,hubs})
+
+      for(const hub of hubs) {
+        const name = `${hub[1]}-${hub[0]}`
+        const graph = new Graph()
+        const find = slug => neighborhood.find(info => info.slug == slug)
+        const node = info => {
+          return graph.addUniqNode('',{
+            name:info.title.replaceAll(/ /g,"\n"),
+            title:info.title,
+            site:info.domain
+          })
+        }
+        const info = find(hub[0])
+        const nid = node(info)
+        for(const link in (info.links||{})) {
+          const linked = find(link)
+          if(linked)
+            graph.addRel('',nid,node(linked))
+        }
+        aspects.push({name,graph})
+      }
+      return aspects
+    }
+
   }
 
 
@@ -863,6 +947,11 @@
       const obj = {type, in:[], out:[], props};
       this.nodes.push(obj);
       return this.nodes.length-1;
+    }
+
+    addUniqNode(type, props={}) {
+      const nid = this.nodes.findIndex(node => node.type == type && node.props?.name == props?.name)
+      return nid >= 0 ? nid : this.addNode(type, props)
     }
 
     addRel(type, from, to, props={}) {

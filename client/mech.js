@@ -274,8 +274,8 @@
   function walk_emit ({elem,command,args,state}) {
     if(!('neighborhood' in state)) return trouble(elem,`WALK expects state.neighborhood, like from NEIGHBORS.`)
     inspect(elem,'neighborhood',state)
-    const way = (command.match(/\b(steps|days|weeks|months|hubs)\b/) || ['steps'])[0]
-    const steps = walks(way,state.neighborhood)
+    const [,count,way] = command.match(/\b(\d+)? *(steps|days|weeks|months|hubs)\b/) || []
+    const steps = walks(count,way,state.neighborhood)
     const aspects = steps.filter(({graph})=>graph)
     if(state.debug) console.log({steps})
     elem.innerHTML = command
@@ -785,7 +785,7 @@
   }
 
   // inspired by aspects-of-recent-changes/roster-graphs.html
-  function walks(way,neighborhood) {
+  function walks(count,way='steps',neighborhood) {
     const find = slug => neighborhood.find(info => info.slug == slug)
     const prob = n => Math.floor(n * Math.abs(Math.random()-Math.random()))
     const rand = a => a[prob(a.length)]
@@ -793,14 +793,14 @@
       .map(info => info.domain)
       .filter(uniq)
     switch(way) {
-      case 'steps': return steps()
-      case 'days': return periods(1)
-      case 'weeks': return periods(7)
-      case 'months': return periods(30)
-      case 'hubs': return hubs()
+      case 'steps': return steps(count)
+      case 'days': return periods(way,1,count)
+      case 'weeks': return periods(way,7,count)
+      case 'months': return periods(way,30,count)
+      case 'hubs': return hubs(count)
     }
 
-    function steps() {
+    function steps(count=5) {
       return domains.map(domain => {
         const name = domain.split('.').slice(0,3).join('.')
         const done = new Set()
@@ -835,14 +835,14 @@
       })
     }
 
-    function periods(days) {
+    function periods(way,days,count=12) {
       const interval = days*24*60*60*1000
-      const iota = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+      const iota = [...Array(Number(count)).keys()]
       const dates = iota.map(n => Date.now()-n*interval)
       const aspects = []
       for(const stop of dates) {
         const start = stop-interval
-        const name = new Date(stop).toLocaleDateString()
+        const name = `${way.replace(/s$/,'')} ${new Date(start).toLocaleDateString()}`
         const graph = new Graph()
         const node = info => {
           return graph.addUniqNode('',{
@@ -869,7 +869,7 @@
       return aspects
     }
 
-    function hubs() {
+    function hubs(count=12) {
       const aspects = []
       const ignored = new Set()
       const hits = {}
@@ -886,11 +886,11 @@
         console.log('hub links ignored for large pages:',[...ignored])
       const hubs = Object.entries(hits)
         .sort((a,b) => b[1]-a[1])
-        .slice(0,10)
+        .slice(0,count)
       console.log({hits,hubs})
 
       for(const hub of hubs) {
-        const name = `${hub[1]}-${hub[0]}`
+        const name = `hub ${hub[1]} ${hub[0]}`
         const graph = new Graph()
         const node = info => {
           return graph.addUniqNode('',{

@@ -283,10 +283,16 @@
     elem.innerHTML += ` ⇒ ${aspects.length} aspects, ${nodes.length} nodes`
     if(steps.find(({graph}) => !graph)) trouble(elem,`WALK skipped sites with no links in sitemaps`)
     const item = elem.closest('.item')
-    item.classList.add('aspect-source')
-    item.aspectData = () => aspects
-    if (aspects.length)
-      state.aspect = [...(state.aspect||[]), {id:item.dataset.id,result:aspects}]
+    if (aspects.length) {
+      state.aspect = state.aspect || []
+      const obj = state.aspect.find(obj => obj.id == elem.id)
+      if(obj) obj.result = aspects
+      else state.aspect.push({id:elem.id, result:aspects})
+      item.classList.add('aspect-source')
+      item.aspectData = () => state.aspect.map(obj => obj.result).flat()
+      if(state.debug) console.log({command,state:state.aspect,item:item.aspectData()})
+
+    }
   }
 
   function tick_emit ({elem,command,args,body,state}) {
@@ -780,6 +786,7 @@
 
   // inspired by aspects-of-recent-changes/roster-graphs.html
   function walks(way,neighborhood) {
+    const find = slug => neighborhood.find(info => info.slug == slug)
     const prob = n => Math.floor(n * Math.abs(Math.random()-Math.random()))
     const rand = a => a[prob(a.length)]
     const domains = neighborhood
@@ -802,7 +809,6 @@
         const here = neighborhood
           .filter(info => info.domain==domain && ('links' in info))
         if(!here.length) return {name,graph:null}
-        const find = slug => neighborhood.find(info => info.slug == slug)
         const node = info => {
           nid = graph.addNode('',{
             name:info.title.replaceAll(/ /g,"\n"),
@@ -837,9 +843,7 @@
       for(const stop of dates) {
         const start = stop-interval
         const name = new Date(stop).toLocaleDateString()
-        // const done = new Set()
         const graph = new Graph()
-        const find = slug => neighborhood.find(info => info.slug == slug)
         const node = info => {
           return graph.addUniqNode('',{
             name:info.title.replaceAll(/ /g,"\n"),
@@ -867,11 +871,19 @@
 
     function hubs() {
       const aspects = []
+      const ignored = new Set()
       const hits = {}
       for (const info of neighborhood)
         if(info.links)
-          for(const link in info.links)
-            hits[link] = (hits[link]||0) + 1
+          if(Object.keys(info.links).length <= 15) {
+            for(const link in info.links)
+              if(find(link))
+                hits[link] = (hits[link]||0) + 1
+          } else {
+            ignored.add(info.slug)
+          }
+      if(ignored.size > 0)
+        console.log('hub links ignored for large pages:',[...ignored])
       const hubs = Object.entries(hits)
         .sort((a,b) => b[1]-a[1])
         .slice(0,10)
@@ -880,7 +892,6 @@
       for(const hub of hubs) {
         const name = `${hub[1]}-${hub[0]}`
         const graph = new Graph()
-        const find = slug => neighborhood.find(info => info.slug == slug)
         const node = info => {
           return graph.addUniqNode('',{
             name:info.title.replaceAll(/ /g,"\n"),

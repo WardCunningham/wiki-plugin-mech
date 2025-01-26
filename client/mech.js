@@ -674,6 +674,31 @@
     elem.innerHTML = command + ` ⇒ sent`
   }
 
+  function solo_emit({elem,command,state}) {
+    if(!('aspect' in state)) return trouble(elem,`"SOLO" expects "aspect" state, like from "WALK".`)
+    inspect(elem,'aspect',state)
+    const todo = state.aspect.map(each => ({
+      source:each.id,
+      aspects:each.result
+    }))
+    // from Solo plugin, client/solo.js
+    const pageKey = elem.closest('.page').dataset.key
+    const doing = {type:'batch', sources:todo, pageKey}
+    console.log({pageKey,doing})
+    const popup = window.open('/plugins/solo/dialog/#','solo','popup,height=720,width=1280')
+    if (popup.location.pathname != '/plugins/solo/dialog/'){
+      console.log('launching new dialog')
+      popup.addEventListener('load', event => {
+        console.log('launched and loaded')
+        popup.postMessage(doing, window.origin)
+      })
+    }
+    else {
+      console.log('reusing existing dialog')
+      popup.postMessage(doing, window.origin)
+    }
+  }
+
 
 // C A T A L O G
 
@@ -702,7 +727,8 @@
     ROSTER:  {emit:roster_emit},
     LINEUP:  {emit:lineup_emit},
     LISTEN:  {emit:listen_emit},
-    MESSAGE: {emit:message_emit}
+    MESSAGE: {emit:message_emit},
+    SOLO:    {emit:solo_emit}
   }
 
 

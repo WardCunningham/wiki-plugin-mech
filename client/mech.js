@@ -685,6 +685,13 @@
     const pageKey = elem.closest('.page').dataset.key
     const doing = {type:'batch', sources:todo, pageKey}
     console.log({pageKey,doing})
+
+    if (typeof window.soloListener == "undefined" || window.soloListener == null) {
+      console.log('**** Adding solo listener')
+      window.soloListener = soloListener
+      window.addEventListener("message", soloListener)
+    }
+
     const popup = window.open('/plugins/solo/dialog/#','solo','popup,height=720,width=1280')
     if (popup.location.pathname != '/plugins/solo/dialog/'){
       console.log('launching new dialog')
@@ -874,22 +881,27 @@
           return graph.addUniqNode('',{
             name:info.title.replaceAll(/ /g,"\n"),
             title:info.title,
-            site:info.domain
+            site:info.domain,
+            date:info.date
           })
         }
         const here = neighborhood
           .filter(info => info.date < stop && info.date >= start)
           .filter(info => !(info.links && Object.keys(info.links).length > 5))
         if(here.length) {
-          for (const info of here) {
-            const nid = node(info)
-            for (const link in (info.links||{})) {
-              const linked = find(link)
-              if(linked)
-                graph.addRel('',nid,node(linked))
+          const domains = here.reduce((set,info) => {set.add(info.domain); return set}, new Set())
+          for (const domain of domains) {
+            const author = domain.split(/\.|\:/)[0]
+            for (const info of here.filter(info => info.domain == domain)) {
+              const nid = node(info)
+              for (const link in (info.links||{})) {
+                const linked = find(link)
+                if(linked)
+                  graph.addRel('',nid,node(linked))
+              }
             }
+            aspects.push({name:`${name} ${author}`,graph})
           }
-          aspects.push({name,graph})
         }
       }
       return aspects
@@ -1113,6 +1125,50 @@
     }
     page.journal.push(action);
   }
+
+
+  // adapted from Solo client
+
+  function soloListener(event) {
+
+    if (!event.data) return
+    const { data } = event
+    if (data?.action == "publishSourceData" && data?.name == "aspect") {
+      if (wiki.debug) console.log('soloListener - source update', {event,data})
+      return
+    }
+
+    // only continue if event is from a solo popup.
+    // events from a popup window will have an opener
+    // ensure that the popup window is one of ours
+
+    if (!event.source.opener || event.source.location.pathname !== '/plugins/solo/dialog/') {
+      if (wiki.debug) {console.log('soloListener - not for us', {event})}
+      return
+    }
+    if (wiki.debug) {console.log('soloListener - ours', {event})}
+
+    const { action, keepLineup=false, pageKey=null, title=null, context=null, page=null} = data;
+
+    let $page = null
+    if (pageKey != null) {
+      $page = keepLineup ? null : $('.page').filter((i, el) => $(el).data('key') == pageKey)
+    }
+
+    switch (action) {
+      case 'doInternalLink':
+        wiki.pageHandler.context = context
+        wiki.doInternalLink(title, $page)
+        break
+      case 'showResult':
+        const options = keepLineup ? {} : {$page}
+        wiki.showResult(wiki.newPage(page), options)
+        break
+      default:
+        console.error({ where:'soloListener', message: "unknown action", data })
+    }
+  }
+
 
   function create(revIndex, data) {
     revIndex = +revIndex;

@@ -953,6 +953,7 @@
             site:info.domain
           })
         }
+
         // hub
         const info = find(hub[0])
         const nid = node(info)
@@ -962,59 +963,24 @@
           graph.addRel('',node(parent),nid)
         }
 
-        // hub children
+        // children of hub
         for(const link in (info.links||{})) {
           const child = find(link)
           if(child) {
             const cid = node(child)
             graph.addRel('',nid,cid)
 
-            // parents of children
+            // parents of children of hub
             for(const parent of newr(back(child.slug))) {
               graph.addRel('',node(parent),cid)
             }
           }
         }
 
-
         aspects.push({name,graph})
       }
       return aspects
     }
-
-
-/*
-
-    for (const name of newest(Object.keys(info.links||{}))){
-      const kid = node(name)
-      graph.addRel('',nid,kid)
-
-      const parents = neighborhood.find(info => info.slug==name)?.cites || []
-      for (const parent of newest(parents))
-        graph.addRel('',node(parent),kid)
-    }
-
-    for (const name of newest(info.cites))
-      graph.addRel('',node(name),nid)
-    return graph
-  }
-
-  function newest(slugs) {
-    const recent = slug => neighborhood
-      .filter(info => info.slug == slug)
-    return slugs
-      .map(slug => [slug,recent(slug)])
-      .filter(pair => pair[1].length)
-      .map(pair => [pair[0],pair[1].sort((a,b) => b.date - a.date)[0]])
-      .sort((a,b) => b[1].date - a[1].date)
-      .map(pair => pair[0])
-      .slice(0,3)
-  }
-
-*/
-
-
-
   }
 
 

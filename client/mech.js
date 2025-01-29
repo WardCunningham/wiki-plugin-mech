@@ -2,6 +2,7 @@
 (function() {
   "use strict"
   const uniq = (value, index, self) => self.indexOf(value) === index
+  const delay = time => new Promise(res => setTimeout(res,time))
 
   function expand(text) {
     return text
@@ -275,6 +276,7 @@
     if(!('neighborhood' in state)) return trouble(elem,`WALK expects state.neighborhood, like from NEIGHBORS.`)
     inspect(elem,'neighborhood',state)
     const [,count,way] = command.match(/\b(\d+)? *(steps|days|weeks|months|hubs)\b/) || []
+    if(!way && command != 'WALK') return trouble(elem, `WALK can't understand rest of this block.`)
     const steps = walks(count,way,state.neighborhood)
     const aspects = steps.filter(({graph})=>graph)
     if(state.debug) console.log({steps})
@@ -287,7 +289,7 @@
       state.aspect = state.aspect || []
       const obj = state.aspect.find(obj => obj.id == elem.id)
       if(obj) obj.result = aspects
-      else state.aspect.push({id:elem.id, result:aspects})
+      else state.aspect.push({id:elem.id, result:aspects, source:command})
       item.classList.add('aspect-source')
       item.aspectData = () => state.aspect.map(obj => obj.result).flat()
       if(state.debug) console.log({command,state:state.aspect,item:item.aspectData()})
@@ -674,13 +676,17 @@
     elem.innerHTML = command + ` ⇒ sent`
   }
 
-  function solo_emit({elem,command,state}) {
+  async function solo_emit({elem,command,state}) {
     if(!('aspect' in state)) return trouble(elem,`"SOLO" expects "aspect" state, like from "WALK".`)
     inspect(elem,'aspect',state)
+    elem.innerHTML = command
     const todo = state.aspect.map(each => ({
-      source:each.id,
+      source:each.source || each.id,
       aspects:each.result
     }))
+    const aspects = todo.reduce((sum,each) => sum+each.aspects.length, 0)
+    elem.innerHTML += ` ⇒ ${todo.length} sources, ${aspects} aspects`
+
     // from Solo plugin, client/solo.js
     const pageKey = elem.closest('.page').dataset.key
     const doing = {type:'batch', sources:todo, pageKey}
@@ -692,6 +698,7 @@
       window.addEventListener("message", soloListener)
     }
 
+    await delay(750)
     const popup = window.open('/plugins/solo/dialog/#','solo','popup,height=720,width=1280')
     if (popup.location.pathname != '/plugins/solo/dialog/'){
       console.log('launching new dialog')
@@ -822,6 +829,9 @@
     const find = slug => neighborhood.find(info => info.slug == slug)
     const prob = n => Math.floor(n * Math.abs(Math.random()-Math.random()))
     const rand = a => a[prob(a.length)]
+    const good = info => info.links && Object.keys(info.links).length < 10
+    const back = slug => neighborhood.filter(info => good(info) && slug in info.links)
+    const newr = infos => infos.toSorted((a,b)=>b.date-a.date).slice(0,3)
     const domains = neighborhood
       .map(info => info.domain)
       .filter(uniq)
@@ -876,21 +886,21 @@
       for(const stop of dates) {
         const start = stop-interval
         const name = `${way.replace(/s$/,'')} ${new Date(start).toLocaleDateString()}`
-        const graph = new Graph()
-        const node = info => {
-          return graph.addUniqNode('',{
-            name:info.title.replaceAll(/ /g,"\n"),
-            title:info.title,
-            site:info.domain,
-            date:info.date
-          })
-        }
         const here = neighborhood
           .filter(info => info.date < stop && info.date >= start)
           .filter(info => !(info.links && Object.keys(info.links).length > 5))
         if(here.length) {
           const domains = here.reduce((set,info) => {set.add(info.domain); return set}, new Set())
           for (const domain of domains) {
+            const graph = new Graph()
+            const node = info => {
+              return graph.addUniqNode('',{
+                name:info.title.replaceAll(/ /g,"\n"),
+                title:info.title,
+                site:info.domain,
+                date:info.date
+              })
+            }
             const author = domain.split(/\.|\:/)[0]
             for (const info of here.filter(info => info.domain == domain)) {
               const nid = node(info)
@@ -927,6 +937,12 @@
         .slice(0,count)
       console.log({hits,hubs})
 
+      // hub[0] => slug
+      // find(slug) => info
+      // node(info) => nid
+      // back(slug) => infos
+      // newr(infos) => infos
+
       for(const hub of hubs) {
         const name = `hub ${hub[1]} ${hub[0]}`
         const graph = new Graph()
@@ -937,17 +953,67 @@
             site:info.domain
           })
         }
+        // hub
         const info = find(hub[0])
         const nid = node(info)
-        for(const link in (info.links||{})) {
-          const linked = find(link)
-          if(linked)
-            graph.addRel('',nid,node(linked))
+
+        // parents of hub
+        for(const parent of newr(back(info.slug))) {
+          graph.addRel('',node(parent),nid)
         }
+
+        // hub children
+        for(const link in (info.links||{})) {
+          const child = find(link)
+          if(child) {
+            const cid = node(child)
+            graph.addRel('',nid,cid)
+
+            // parents of children
+            for(const parent of newr(back(child.slug))) {
+              graph.addRel('',node(parent),cid)
+            }
+          }
+        }
+
+
         aspects.push({name,graph})
       }
       return aspects
     }
+
+
+/*
+
+    for (const name of newest(Object.keys(info.links||{}))){
+      const kid = node(name)
+      graph.addRel('',nid,kid)
+
+      const parents = neighborhood.find(info => info.slug==name)?.cites || []
+      for (const parent of newest(parents))
+        graph.addRel('',node(parent),kid)
+    }
+
+    for (const name of newest(info.cites))
+      graph.addRel('',node(name),nid)
+    return graph
+  }
+
+  function newest(slugs) {
+    const recent = slug => neighborhood
+      .filter(info => info.slug == slug)
+    return slugs
+      .map(slug => [slug,recent(slug)])
+      .filter(pair => pair[1].length)
+      .map(pair => [pair[0],pair[1].sort((a,b) => b.date - a.date)[0]])
+      .sort((a,b) => b[1].date - a[1].date)
+      .map(pair => pair[0])
+      .slice(0,3)
+  }
+
+*/
+
+
 
   }
 

@@ -835,6 +835,47 @@
     const domains = neighborhood
       .map(info => info.domain)
       .filter(uniq)
+
+    function blanket(info) {
+
+      // hub[0] => slug
+      // find(slug) => info
+      // node(info) => nid
+      // back(slug) => infos
+      // newr(infos) => infos
+
+      const graph = new Graph()
+      const node = info => {
+        return graph.addUniqNode('',{
+          name:info.title.replaceAll(/ /g,"\n"),
+          title:info.title,
+          site:info.domain
+        })
+      }
+
+      // hub
+      const nid = node(info)
+
+      // parents of hub
+      for(const parent of newr(back(info.slug))) {
+        graph.addRel('',node(parent),nid)
+      }
+
+      // children of hub
+      for(const link in (info.links||{})) {
+        const child = find(link)
+        if(child) {
+          const cid = node(child)
+          graph.addRel('',nid,cid)
+
+          // parents of children of hub
+          for(const parent of newr(back(child.slug))) {
+            graph.addRel('',node(parent),cid)
+          }
+        }
+      }
+
+    }
     switch(way) {
       case 'steps': return steps(count)
       case 'days': return periods(way,1,count)
@@ -937,46 +978,9 @@
         .slice(0,count)
       console.log({hits,hubs})
 
-      // hub[0] => slug
-      // find(slug) => info
-      // node(info) => nid
-      // back(slug) => infos
-      // newr(infos) => infos
-
       for(const hub of hubs) {
         const name = `hub ${hub[1]} ${hub[0]}`
-        const graph = new Graph()
-        const node = info => {
-          return graph.addUniqNode('',{
-            name:info.title.replaceAll(/ /g,"\n"),
-            title:info.title,
-            site:info.domain
-          })
-        }
-
-        // hub
-        const info = find(hub[0])
-        const nid = node(info)
-
-        // parents of hub
-        for(const parent of newr(back(info.slug))) {
-          graph.addRel('',node(parent),nid)
-        }
-
-        // children of hub
-        for(const link in (info.links||{})) {
-          const child = find(link)
-          if(child) {
-            const cid = node(child)
-            graph.addRel('',nid,cid)
-
-            // parents of children of hub
-            for(const parent of newr(back(child.slug))) {
-              graph.addRel('',node(parent),cid)
-            }
-          }
-        }
-
+        const graph = blanket(find(hub[0]))
         aspects.push({name,graph})
       }
       return aspects

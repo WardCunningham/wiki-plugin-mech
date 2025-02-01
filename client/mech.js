@@ -275,9 +275,23 @@
   function walk_emit ({elem,command,args,state}) {
     if(!('neighborhood' in state)) return trouble(elem,`WALK expects state.neighborhood, like from NEIGHBORS.`)
     inspect(elem,'neighborhood',state)
-    const [,count,way] = command.match(/\b(\d+)? *(steps|days|weeks|months|hubs)\b/) || []
+    const [,count,way] = command.match(/\b(\d+)? *(steps|days|weeks|months|hubs|lineup|references)\b/) || []
     if(!way && command != 'WALK') return trouble(elem, `WALK can't understand rest of this block.`)
-    const steps = walks(count,way,state.neighborhood)
+    const scope = {
+      lineup(){
+        const items = [...document.querySelectorAll('.page')]
+        const index = items.indexOf(elem.closest('.page'))
+        return items.slice(0,index)
+      },
+      references(){
+        const div = elem.closest('.page')
+        const pageObject = wiki.lineup.atKey(div.dataset.key)
+        const story = pageObject.getRawPage().story
+        console.log({div,pageObject,story})
+        return story.filter(item => item.type == 'reference')
+      }
+    }
+    const steps = walks(count,way,state.neighborhood,scope)
     const aspects = steps.filter(({graph})=>graph)
     if(state.debug) console.log({steps})
     elem.innerHTML = command
@@ -825,8 +839,8 @@
   }
 
   // inspired by aspects-of-recent-changes/roster-graphs.html
-  function walks(count,way='steps',neighborhood) {
-    const find = slug => neighborhood.find(info => info.slug == slug)
+  function walks(count,way='steps',neighborhood,scope={}) {
+    const find = (slug,site) => neighborhood.find(info => info.slug == slug && (!site || info.domain == site))
     const prob = n => Math.floor(n * Math.abs(Math.random()-Math.random()))
     const rand = a => a[prob(a.length)]
     const good = info => info.links && Object.keys(info.links).length < 10
@@ -874,14 +888,17 @@
           }
         }
       }
-
+      return graph
     }
+
     switch(way) {
       case 'steps': return steps(count)
       case 'days': return periods(way,1,count)
       case 'weeks': return periods(way,7,count)
       case 'months': return periods(way,30,count)
       case 'hubs': return hubs(count)
+      case 'references': return references()
+      case 'lineup': return lineup()
     }
 
     function steps(count=5) {
@@ -983,6 +1000,35 @@
         const graph = blanket(find(hub[0]))
         aspects.push({name,graph})
       }
+      return aspects
+    }
+
+    function lineup() {
+      const aspects = []
+      const lineup = scope.lineup()
+      console.log({lineup})
+      for(const div of lineup){
+        const pageObject = wiki.lineup.atKey(div.dataset.key)
+        const slug = pageObject.getSlug()
+        const site = pageObject.getRemoteSite(location.host)
+        const info = find(slug,site)
+        console.log({div,pageObject,site,slug,info})
+        aspects.push({name:pageObject.getTitle(), graph:blanket(info)})
+      }
+      return aspects
+    }
+
+    function references() {
+      const aspects = []
+      const items = scope.references()
+      console.log({items})
+      for(const item of items){
+        const {title,site,slug} = item
+        const info = find(slug,site)
+        console.log({site,slug,info})
+        aspects.push({name:title, graph:blanket(info)})
+      }
+      console.log({aspects})
       return aspects
     }
   }

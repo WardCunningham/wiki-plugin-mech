@@ -3,6 +3,7 @@
   "use strict"
   const uniq = (value, index, self) => self.indexOf(value) === index
   const delay = time => new Promise(res => setTimeout(res,time))
+  const asSlug = (title) => title.replace(/\s/g, '-').replace(/[^A-Za-z0-9-]/g, '').toLowerCase()
 
   function expand(text) {
     return text
@@ -260,13 +261,33 @@
     wiki.showResult(wiki.newPage(page), options)
   }
 
-  function neighbors_emit ({elem,command,args,state}) {
+  async function neighbors_emit ({elem,command,args,body,state}) {
+    const belem = probe => document.getElementById(probe.key)
     const want = args[0]
     if(state.debug) console.log({neighborhoodObject:wiki.neighborhoodObject})
     const have = Object.entries(wiki.neighborhoodObject.sites)
       .filter(([domain,site]) => !site.sitemapRequestInflight && (!want || domain.includes(want)))
       .map(([domain,site]) => (site.sitemap||[])
         .map(info => Object.assign({domain},info)))
+    for (const probe of (body||[])) {
+      if(!probe.command.endsWith(' Survey')) {
+        trouble(belem(probe),`NEIGHBORS expects a Site Survey title, like Pattern Link Survey`)
+        continue
+      }
+      const todos = have.filter(sitemap =>
+        sitemap.find(info => info.title == probe.command))
+      belem(probe).innerHTML = `${probe.command} ⇒ ${todos.length} sites`
+      for (const todo of todos) {
+        const url = `//${todo[0].domain}/${asSlug(probe.command)}.json`
+        const page = await fetch(url).then(res => res.json())
+        const survey = page.story.find(item => item.type == 'frame')?.survey
+        for (const info of todo) {
+          const extra = Object.assign({},survey.find(inf => inf.slug == info.slug),info)
+          Object.assign(info,extra)
+        }
+        console.log({url,page,survey,todo})
+      }
+    }
     state.neighborhood = have.flat()
       .sort((a,b) => b.date - a.date)
     elem.innerHTML = command + ` ⇒ ${state.neighborhood.length} pages, ${have.length} sites`
@@ -841,6 +862,7 @@
   // inspired by aspects-of-recent-changes/roster-graphs.html
   function walks(count,way='steps',neighborhood,scope={}) {
     const find = (slug,site) => neighborhood.find(info => info.slug == slug && (!site || info.domain == site))
+    const finds = (slugs) => slugs ? slugs.map(slug => find(slug)) : null
     const prob = n => Math.floor(n * Math.abs(Math.random()-Math.random()))
     const rand = a => a[prob(a.length)]
     const good = info => info.links && Object.keys(info.links).length < 10
@@ -866,24 +888,26 @@
           site:info.domain
         })
       }
+      const up = info => finds(info?.patterns?.up) ?? newr(back(info.slug))
+      const down = info => info?.patterns?.down ?? Object.keys(info.links||{})
 
       // hub
       const nid = node(info)
 
       // parents of hub
-      for(const parent of newr(back(info.slug))) {
+      for(const parent of up(info)) {
         graph.addRel('',node(parent),nid)
       }
 
       // children of hub
-      for(const link in (info.links||{})) {
+      for(const link of down(info)) {
         const child = find(link)
         if(child) {
           const cid = node(child)
           graph.addRel('',nid,cid)
 
           // parents of children of hub
-          for(const parent of newr(back(child.slug))) {
+          for(const parent of up(child)) {
             graph.addRel('',node(parent),cid)
           }
         }

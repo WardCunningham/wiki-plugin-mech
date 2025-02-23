@@ -867,7 +867,9 @@
     const rand = a => a[prob(a.length)]
     const good = info => info.links && Object.keys(info.links).length < 10
     const back = slug => neighborhood.filter(info => good(info) && slug in info.links)
-    const newr = infos => infos.toSorted((a,b)=>b.date-a.date).slice(0,3)
+    // const uniq = (value, index, self) => self.indexOf(value) === index
+    const dedup = (value, index, self) => self.findIndex(info => info.slug == value.slug) === index
+    const newr = infos => infos.toSorted((a,b)=>b.date-a.date).filter(dedup).slice(0,3)
     const domains = neighborhood
       .map(info => info.domain)
       .filter(uniq)

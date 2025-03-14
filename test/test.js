@@ -2,7 +2,7 @@
 // see http://mochajs.org/
 
 (function() {
-  const mech = require('../client/mech')
+  const mech = require('../src/client/mech')
   const {describe,it} = require('node:test')
   const expect = require('expect.js')
   const tags = /<(\/?.\w+).*?>/g

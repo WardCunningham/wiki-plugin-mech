@@ -11,23 +11,25 @@
     "federated wiki",
     "plugin"
   ],
+  "scripts": {
+    "build": "npm run clean; npm run test; node --no-warnings scripts/build-client.js",
+    "clean": "rm client/mech.js client/mech.js.map",
+    "prettier:format": "prettier --write './**/*.js'",
+    "prettier:check": "prettier --check ./**/*.js",
+    "test": "node --test"
+  },
   "author": {
     "name": "Ward Cunningham",
     "email": "ward@c2.com",
     "url": "https://c2.com/ward"
   },
   "contributors": [],
-  "scripts": {
-    "test": "mocha"
-  },
   "devDependencies": {
-    "expect.js": "^0.3.1",
-    "grunt": "^1.0.1",
-    "grunt-contrib-coffee": "^2.0.0",
-    "grunt-contrib-watch": "^1.0.0",
-    "grunt-git-authors": "^3.2.0",
-    "grunt-mocha-test": "^0.13.2",
-    "mocha": "^5.2.0"
+    "@eslint/js": "^9.22.0",
+    "esbuild": "^0.25.1",
+    "eslint": "^9.22.0",
+    "globals": "^16.0.0",
+    "prettier": "^3.5.3"
   },
   "license": "MIT",
   "repository": {
@@ -39,5 +41,8 @@
   },
   "engines": {
     "node": ">=0.10"
+  },
+  "dependencies": {
+    "expect.js": "^0.3.1"
   }
 }

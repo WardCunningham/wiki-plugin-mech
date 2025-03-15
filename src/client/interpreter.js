@@ -66,9 +66,6 @@ import {blocks,trouble,inspect} from './blocks.js'
             trouble(elem,`${op} doesn't name a block we know.`)
           else if (code.command.match(/\S/))
             trouble(elem, `Expected line to begin with all-caps keyword.`)
-      } else if(typeof code == 'array') {
-        console.warn(`this can't happen.`)
-        run(code,state) // when does this even happen?
       }
     }
   }

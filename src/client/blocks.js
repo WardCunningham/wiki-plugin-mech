@@ -1,4 +1,37 @@
 
+  export function trouble(elem,message) {
+    if(elem.innerText.match(/✖︎/)) return
+    elem.innerHTML += `<button style="border-width:0;color:red;">✖︎</button>`
+    elem.querySelector('button').addEventListener('click',event => {
+      elem.outerHTML += `<span style="width:80%;color:gray;">${message}</span>` })
+  }
+
+  export function inspect(elem,key,state) {
+    const tap = elem.previousElementSibling
+    if(state.debug) {
+      const value = state[key]
+      tap.innerHTML = `${key} ⇒ `
+      tap.addEventListener('click',event => {
+        console.log({key,value})
+        let look = tap.previousElementSibling
+        if (!(look?.classList.contains('look'))) {
+          const div = document.createElement('div')
+          div.classList.add('look')
+          tap.insertAdjacentElement('beforebegin',div)
+          look = tap.previousElementSibling
+        }
+        let text = JSON.stringify(value,null,1)
+        if(text.length>300) text = text.substring(0,400)+'...'
+        const css = `border:1px solid black; background-color:#f8f8f8; padding:8px; color:gray; word-break: break-all;`
+        look.innerHTML = `<div style="${css}">${text}</div>`
+      })
+    }
+    else {
+      tap.innerHTML = ''
+    }
+  }
+
+
 // B L O C K S
 
   function click_emit ({elem,body,state}) {
@@ -638,7 +671,7 @@
 
 // C A T A L O G
 
-  const blocks = {
+export const blocks = {
     CLICK:   {emit:click_emit},
     HELLO:   {emit:hello_emit},
     FROM:    {emit:from_emit},
@@ -666,4 +699,3 @@
     MESSAGE: {emit:message_emit},
     SOLO:    {emit:solo_emit}
   }
-

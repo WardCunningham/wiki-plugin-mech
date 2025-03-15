@@ -1,10 +1,14 @@
 // build time tests for mech plugin
 // see http://mochajs.org/
 
+import * as mech from '../src/client/mech.js'
+import {describe,it} from 'node:test'
+import expect from 'expect.js'
+
 (function() {
-  const mech = require('../src/client/mech')
-  const {describe,it} = require('node:test')
-  const expect = require('expect.js')
+  // const mech = require('../src/client/mech')
+  // const {describe,it} = require('node:test')
+  // const expect = require('expect.js')
   const tags = /<(\/?.\w+).*?>/g
 
   describe('mech plugin', () => {
@@ -67,7 +71,7 @@
         mech.run(nest,state,elem)
         expect(elem.log.join('|')).to.be('HELLO 😀')
       })
-      it('simple REPORT', () => {
+      it('simple REPORT', async () => {
         var lines = ['REPORT']
         var nest = mech.tree(lines,[],0)
         var state = {temperature: '98.6°F'}
@@ -77,7 +81,7 @@
           get previousElementSibling() {return elem},
           log: []
         }
-        mech.run(nest,state,elem)
+        await mech.run(nest,state,elem)
         var result = elem.log.join('|').replaceAll(tags,"<$1>")
         expect(result).to.be('|REPORT<br><font>98.6°F</font>')
       })

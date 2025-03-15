@@ -1,5 +1,6 @@
+import {tree,format,run} from './interpreter.js'
 
-(function() {
+// (function() {
   "use strict"
   const uniq = (value, index, self) => self.indexOf(value) === index
   const delay = time => new Promise(res => setTimeout(res,time))
@@ -45,9 +46,11 @@
     window.plugins.mech = {emit, bind}
   }
 
-  if (typeof module !== "undefined" && module !== null) {
-    // module.exports = {expand,tree,format,run}
-    module.exports = {expand}
-  }
+  // if (typeof module !== "undefined" && module !== null) {
+  //   module.exports = {expand,tree,format,run}
+  // }
 
-}).call(this)
+  // export const register = typeof window == 'undefined' ? { expand,tree,format,run } : undefined
+  export {expand,tree,format,run}
+
+// }).call(this)

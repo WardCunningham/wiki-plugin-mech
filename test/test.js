@@ -89,7 +89,7 @@ import expect from 'expect.js'
             return tag => elem
           },
           get addEventListener() {
-            return (event,funct) => {
+            return (event, funct) => {
               this.log.push(event)
               handler = funct
             }
@@ -99,11 +99,11 @@ import expect from 'expect.js'
         var event = {
           get shiftKey() {
             return false
-          }
+          },
         }
         await mech.run(nest, state, elem)
-        await handler.apply(null,[event])
-        expect(elem.log.join('|').replaceAll(/<.*?>/g,'')).to.be('CLICK▶|click')
+        await handler.apply(null, [event])
+        expect(elem.log.join('|').replaceAll(/<.*?>/g, '')).to.be('CLICK▶|click')
       })
       it('simple REPORT', async () => {
         var lines = ['REPORT']

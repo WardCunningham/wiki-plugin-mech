@@ -12,8 +12,10 @@
     "plugin"
   ],
   "scripts": {
-    "build": "npm run clean; npm run test; node --no-warnings scripts/build-client.js",
+    "build": "npm run clean; npm run check; npm run test; node --no-warnings scripts/build-client.js",
     "clean": "rm client/mech.js client/mech.js.map",
+    "format": "prettier --write './**/*.js'",
+    "check": "prettier --check ./**/*.js",
     "prettier:format": "prettier --write './**/*.js'",
     "prettier:check": "prettier --check ./**/*.js",
     "test": "node --test"

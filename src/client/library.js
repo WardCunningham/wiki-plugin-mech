@@ -1,7 +1,7 @@
 // L I B R A R Y
 
 // adapted from wiki-plugin-frame/client/frame.js
-function requestSourceData(item, topic) {
+export function requestSourceData(item, topic) {
   let sources = []
   for (let div of document.querySelectorAll(`.item`)) {
     if (div.classList.contains(`${topic}-source`)) {
@@ -20,7 +20,7 @@ function requestSourceData(item, topic) {
 }
 
 // adapted from super-collaborator/dotify.js
-function dotify(graph) {
+export function dotify(graph) {
   const tip = props =>
     Object.entries(props)
       .filter(e => e[1])
@@ -39,7 +39,7 @@ function dotify(graph) {
 }
 
 // inspired by aspects-of-recent-changes/roster-graphs.html
-function walks(count, way = 'steps', neighborhood, scope = {}) {
+export function walks(count, way = 'steps', neighborhood, scope = {}) {
   const find = (slug, site) => neighborhood.find(info => info.slug == slug && (!site || info.domain == site))
   const finds = slugs => (slugs ? slugs.map(slug => find(slug)) : null)
   const prob = n => Math.floor(n * Math.abs(Math.random() - Math.random()))
@@ -247,7 +247,7 @@ function walks(count, way = 'steps', neighborhood, scope = {}) {
 }
 
 // adapted from testing-file-mech/testing-kwic.html
-function kwic(prefix, lines, stop) {
+export function kwic(prefix, lines, stop) {
   const quotes = lines
     .filter(line => line.match(/\t/))
     .map(quote)
@@ -357,7 +357,7 @@ class Turtle {
 // a story or even regenerate a complete story from some or
 // all of a journal.
 
-function apply(page, action) {
+export function apply(page, action) {
   const order = () => {
     return (page.story || []).map(item => item?.id)
   }
@@ -421,7 +421,7 @@ function apply(page, action) {
 
 // adapted from Solo client
 
-function soloListener(event) {
+export function soloListener(event) {
   if (!event.data) return
   const { data } = event
   if (data?.action == 'publishSourceData' && data?.name == 'aspect') {

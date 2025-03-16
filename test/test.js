@@ -73,6 +73,38 @@ import expect from 'expect.js'
         mech.run(nest, state, elem)
         expect(elem.log.join('|')).to.be('HELLO 😀')
       })
+      it('CLICK HELLO', async () => {
+        var lines = ['CLICK', ' HELLO']
+        var nest = mech.tree(lines, [], 0)
+        var state = {}
+        var handler
+        var elem = {
+          get innerHTML() {
+            return 'CLICK'
+          },
+          set innerHTML(name) {
+            this.log.push(name)
+          },
+          get querySelector() {
+            return tag => elem
+          },
+          get addEventListener() {
+            return (event,funct) => {
+              this.log.push(event)
+              handler = funct
+            }
+          },
+          log: [],
+        }
+        var event = {
+          get shiftKey() {
+            return false
+          }
+        }
+        await mech.run(nest, state, elem)
+        await handler.apply(null,[event])
+        expect(elem.log.join('|').replaceAll(/<.*?>/g,'')).to.be('CLICK▶|click')
+      })
       it('simple REPORT', async () => {
         var lines = ['REPORT']
         var nest = mech.tree(lines, [], 0)

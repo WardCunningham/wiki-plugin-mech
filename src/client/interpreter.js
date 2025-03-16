@@ -1,4 +1,4 @@
-import { blocks, trouble, inspect } from './blocks.js'
+import { blocks, trouble, inspect, run } from './blocks.js'
 
 function expand(text) {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -43,23 +43,4 @@ export function format(nest) {
     return html.join('\n')
   }
   return block(nest, [0])
-}
-
-export async function run(nest, state = {}, mock) {
-  const scope = nest.slice()
-  while (scope.length) {
-    const code = scope.shift()
-    if ('command' in code) {
-      const command = code.command
-      const elem = mock || document.getElementById(code.key)
-      const [op, ...args] = code.command.split(/ +/)
-      const next = scope[0]
-      const body = next && 'command' in next ? null : scope.shift()
-      const stuff = { command, op, args, body, elem, state }
-      if (state.debug) console.log(stuff)
-      if (blocks[op]) await blocks[op].emit.apply(null, [stuff])
-      else if (op.match(/^[A-Z]+$/)) trouble(elem, `${op} doesn't name a block we know.`)
-      else if (code.command.match(/\S/)) trouble(elem, `Expected line to begin with all-caps keyword.`)
-    }
-  }
 }

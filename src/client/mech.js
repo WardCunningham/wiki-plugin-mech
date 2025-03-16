@@ -1,4 +1,5 @@
-import { tree, format, run } from './interpreter.js'
+import { tree, format } from './interpreter.js'
+import { run } from './blocks.js'
 
 // (function() {
 ;('use strict')

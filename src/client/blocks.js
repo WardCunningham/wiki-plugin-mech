@@ -10,6 +10,7 @@ export function trouble(elem, message) {
 }
 
 export function inspect(elem, key, state) {
+  if(elem.mock) return
   const tap = elem.previousElementSibling
   if (state.debug) {
     const value = state[key]
@@ -60,7 +61,7 @@ function click_emit({ elem, body, state }) {
   elem.innerHTML += '<button style="border-width:0;">▶</button>'
   elem.querySelector('button').addEventListener('click', event => {
     state.debug = event.shiftKey
-    run(body, state)
+    run(body, state, elem.mock)
   })
 }
 

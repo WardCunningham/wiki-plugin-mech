@@ -75,12 +75,13 @@ import expect from 'expect.js'
       })
       it('CLICK HELLO', async () => {
         var lines = ['CLICK', ' HELLO']
+        var ops = ['CLICK','CLICK','HELLO','HELLO']
         var nest = mech.tree(lines, [], 0)
         var state = {}
         var handler
         var elem = {
           get innerHTML() {
-            return 'CLICK'
+            return ops.shift()
           },
           set innerHTML(name) {
             this.log.push(name)
@@ -94,6 +95,9 @@ import expect from 'expect.js'
               handler = funct
             }
           },
+          get mock() {
+            return elem
+          },
           log: [],
         }
         var event = {
@@ -103,7 +107,7 @@ import expect from 'expect.js'
         }
         await mech.run(nest, state, elem)
         await handler.apply(null, [event])
-        expect(elem.log.join('|').replaceAll(/<.*?>/g, '')).to.be('CLICK▶|click')
+        expect(elem.log.join('|').replaceAll(/<.*?>/g, '')).to.be('CLICK▶|click|HELLO 😀')
       })
       it('simple REPORT', async () => {
         var lines = ['REPORT']

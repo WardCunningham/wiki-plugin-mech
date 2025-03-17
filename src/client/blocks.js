@@ -10,7 +10,7 @@ export function trouble(elem, message) {
 }
 
 export function inspect(elem, key, state) {
-  if(elem.mock) return
+  if (elem.mock) return
   const tap = elem.previousElementSibling
   if (state.debug) {
     const value = state[key]

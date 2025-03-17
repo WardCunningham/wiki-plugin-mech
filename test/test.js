@@ -75,7 +75,7 @@ import expect from 'expect.js'
       })
       it('CLICK HELLO', async () => {
         var lines = ['CLICK', ' HELLO']
-        var ops = ['CLICK','CLICK','HELLO','HELLO']
+        var ops = ['CLICK', 'CLICK', 'HELLO', 'HELLO']
         var nest = mech.tree(lines, [], 0)
         var state = {}
         var handler

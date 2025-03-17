@@ -1,4 +1,4 @@
-import { soloListener, apply, requestSourceData, dotify, walks } from './library.js'
+import { soloListener, apply, requestSourceData, dotify, walks, Turtle, kwic } from './library.js'
 import { uniq, delay, asSlug } from './mech.js'
 
 export function trouble(elem, message) {
@@ -446,7 +446,7 @@ function kwic_emit({ elem, command, args, body, state }) {
   }
 
   state.items = groups.map(group => {
-    text = `# ${group.group}\n\n${group.quotes.map(quote => link(quote)).join('\n')}`
+    const text = `# ${group.group}\n\n${group.quotes.map(quote => link(quote)).join('\n')}`
     return { type: 'markdown', text }
   })
 }

@@ -1,3 +1,5 @@
+import { uniq, delay, asSlug } from './mech.js'
+
 // L I B R A R Y
 
 // adapted from wiki-plugin-frame/client/frame.js
@@ -277,7 +279,7 @@ export function kwic(prefix, lines, stop) {
 }
 
 // adapted from graph/src/graph.js
-class Graph {
+export class Graph {
   constructor(nodes = [], rels = []) {
     this.nodes = nodes
     this.rels = rels
@@ -309,7 +311,7 @@ class Graph {
   }
 }
 
-class Turtle {
+export class Turtle {
   constructor(elem) {
     const size = elem
     const div = document.createElement('div')
@@ -464,7 +466,7 @@ export function soloListener(event) {
   }
 }
 
-function create(revIndex, data) {
+export function create(revIndex, data) {
   revIndex = +revIndex
   const revJournal = data.journal.slice(0, revIndex + 1)
   const revPage = { title: data.title, story: [] }

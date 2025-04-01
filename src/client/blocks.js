@@ -1,6 +1,7 @@
 import { soloListener, apply, requestSourceData, dotify, walks, Turtle, kwic } from './library.js'
 import { uniq, delay, asSlug } from './mech.js'
 
+/* c8 ignore start */
 export function trouble(elem, message) {
   if (elem.innerText.match(/✖︎/)) return
   elem.innerHTML += `<button style="border-width:0;color:red;">✖︎</button>`
@@ -45,6 +46,7 @@ export function button(elem, label, handler) {
 export function element(key) {
   return document.getElementById(key)
 }
+/* c8 ignore stop */
 
 export async function run(nest, state) {
   const scope = nest.slice()

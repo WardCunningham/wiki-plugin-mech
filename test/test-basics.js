@@ -10,7 +10,7 @@ import expect from 'expect.js'
   // const expect = require('expect.js')
   const tags = /<(\/?.\w+).*?>/g
 
-  describe('mech plugin', () => {
+  describe('mech plugin basics', () => {
     describe('expand', () => {
       it('can use math notations', () => {
         var result = mech.expand('a < b && c > d')
@@ -54,80 +54,14 @@ import expect from 'expect.js'
         var result = html.replaceAll(/<(\/?.\w+).*?>/g, '<$1>')
         expect(result).to.be('<font></font><span>CLICK</span>\n<div><font></font><span>HELLO</span></div>')
       })
-    })
-
-    describe('run', () => {
-      it('simple HELLO', () => {
-        var lines = ['HELLO']
+      it('nested NEIGHBORS', () => {
+        var lines = ['NEIGHBORS', ' JournalForkSurvey']
         var nest = mech.tree(lines, [], 0)
-        var state = {}
-        var elem = {
-          get innerHTML() {
-            return 'HELLO'
-          },
-          set innerHTML(name) {
-            this.log.push(name)
-          },
-          log: [],
-        }
-        mech.run(nest, state, elem)
-        expect(elem.log.join('|')).to.be('HELLO 😀')
-      })
-      it('CLICK HELLO', async () => {
-        var lines = ['CLICK', ' HELLO']
-        var ops = ['CLICK', 'CLICK', 'HELLO', 'HELLO']
-        var nest = mech.tree(lines, [], 0)
-        var state = {}
-        var handler
-        var elem = {
-          get innerHTML() {
-            return ops.shift()
-          },
-          set innerHTML(name) {
-            this.log.push(name)
-          },
-          get querySelector() {
-            return tag => elem
-          },
-          get addEventListener() {
-            return (event, funct) => {
-              this.log.push(event)
-              handler = funct
-            }
-          },
-          get mock() {
-            return elem
-          },
-          log: [],
-        }
-        var event = {
-          get shiftKey() {
-            return false
-          },
-        }
-        await mech.run(nest, state, elem)
-        await handler.apply(null, [event])
-        expect(elem.log.join('|').replaceAll(/<.*?>/g, '')).to.be('CLICK▶|click|HELLO 😀')
-      })
-      it('simple REPORT', async () => {
-        var lines = ['REPORT']
-        var nest = mech.tree(lines, [], 0)
-        var state = { temperature: '98.6°F' }
-        var elem = {
-          get innerHTML() {
-            return 'REPORT'
-          },
-          set innerHTML(name) {
-            this.log.push(name)
-          },
-          get previousElementSibling() {
-            return elem
-          },
-          log: [],
-        }
-        await mech.run(nest, state, elem)
-        var result = elem.log.join('|').replaceAll(tags, '<$1>')
-        expect(result).to.be('|REPORT<br><font>98.6°F</font>')
+        var html = mech.format(nest)
+        var result = html.replaceAll(/<(\/?.\w+).*?>/g, '<$1>')
+        expect(result).to.be(
+          '<font></font><span>NEIGHBORS</span>\n<div><font></font><span>JournalForkSurvey</span></div>',
+        )
       })
     })
   })

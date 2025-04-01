@@ -10,7 +10,6 @@ export function trouble(elem, message) {
 }
 
 export function inspect(elem, key, state) {
-  if (elem.mock) return
   const tap = elem.previousElementSibling
   if (state.debug) {
     const value = state[key]
@@ -34,21 +33,34 @@ export function inspect(elem, key, state) {
   }
 }
 
-export async function run(nest, state = {}, mock) {
+export function response(elem, html) {
+  elem.innerHTML += html
+}
+
+export function button(elem, label, handler) {
+  if (!elem.innerHTML.match(/button/)) response(elem, `<button style="border-width:0;">${label}</button>`)
+  elem.querySelector('button').addEventListener('click', handler)
+}
+
+export function element(key) {
+  return document.getElementById(key)
+}
+
+export async function run(nest, state) {
   const scope = nest.slice()
   while (scope.length) {
     const code = scope.shift()
     if ('command' in code) {
       const command = code.command
-      const elem = mock || document.getElementById(code.key)
+      const elem = state.api ? state.api.element(code.key) : document.getElementById(code.key)
       const [op, ...args] = code.command.split(/ +/)
       const next = scope[0]
       const body = next && 'command' in next ? null : scope.shift()
       const stuff = { command, op, args, body, elem, state }
       if (state.debug) console.log(stuff)
       if (blocks[op]) await blocks[op].emit.apply(null, [stuff])
-      else if (op.match(/^[A-Z]+$/)) trouble(elem, `${op} doesn't name a block we know.`)
-      else if (code.command.match(/\S/)) trouble(elem, `Expected line to begin with all-caps keyword.`)
+      else if (op.match(/^[A-Z]+$/)) state.api.trouble(elem, `${op} doesn't name a block we know.`)
+      else if (code.command.match(/\S/)) state.api.trouble(elem, `Expected line to begin with all-caps keyword.`)
     }
   }
 }
@@ -56,19 +68,17 @@ export async function run(nest, state = {}, mock) {
 // B L O C K S
 
 function click_emit({ elem, body, state }) {
-  if (elem.innerHTML.match(/button/)) return
-  if (!body?.length) return trouble(elem, `CLICK expects indented blocks to follow.`)
-  elem.innerHTML += '<button style="border-width:0;">▶</button>'
-  elem.querySelector('button').addEventListener('click', event => {
+  if (!body?.length) return state.api.trouble(elem, `CLICK expects indented blocks to follow.`)
+  state.api.button(elem, '▶', event => {
     state.debug = event.shiftKey
-    run(body, state, elem.mock)
+    run(body, state)
   })
 }
 
 function hello_emit({ elem, args, state }) {
   const world = args[0] == 'world' ? ' 🌎' : ' 😀'
-  for (const key of Object.keys(state)) inspect(elem, key, state)
-  elem.innerHTML += world
+  for (const key of Object.keys(state)) state.api.inspect(elem, key, state)
+  state.api.response(elem, world)
 }
 
 function from_emit({ elem, args, body, state }) {
@@ -116,9 +126,9 @@ function sensor_emit({ elem, args, body, state }) {
 
 function report_emit({ elem, command, state }) {
   const value = state?.temperature
-  if (!value) return trouble(elem, `Expect data, as from SENSOR.`)
-  inspect(elem, 'temperature', state)
-  elem.innerHTML = command + `<br><font face=Arial size=32>${value}</font>`
+  if (!value) return state.api.trouble(elem, `Expect data, as from SENSOR.`)
+  state.api.inspect(elem, 'temperature', state)
+  state.api.response(elem, `<br><font face=Arial size=32>${value}</font>`)
 }
 
 function source_emit({ elem, command, args, body, state }) {

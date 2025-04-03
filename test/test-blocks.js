@@ -27,7 +27,12 @@ const api = {
   element(key) {
     return `element ${key}`
   },
+  jfetch(url) {
+    this.log.push(`fetch ${url}`)
+    return new Promise(res => res(this.files.shift()))
+  },
   log: [],
+  files: [],
   handler: null,
 }
 
@@ -78,6 +83,25 @@ const api = {
       await setup('REPORT')
       var result = api.log.join('|').replaceAll(tags, '<$1>')
       expect(result).to.be('trouble Expect data, as from SENSOR.')
+    })
+    it('trouble FROM', async () => {
+      api.files.push({ story: [{}] })
+      await setup('FROM datalog')
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('trouble FROM expects indented blocks to follow.')
+    })
+    it('simple FROM', async () => {
+      const text = api.files.push({ story: [{}] })
+      await setup('FROM datalog|_HELLO')
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('response ⏳|fetch //datalog.json|response ⌛|response 😀')
+    })
+
+    it('Testing Sensor Mech', async () => {
+      // await setup('FROM datalog|_SENSOR garage|__REPORT')
+      api.files.push({
+        story: [{ type: 'datalog', text: 'SENSOR garage http://home.c2.com:8023\n\nDAY 5000\nKEEP 10' }],
+      })
+      await setup('FROM datalog|_HELLO')
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('response ⏳|fetch //datalog.json|response ⌛|response 😀')
     })
   })
 }).call(this)

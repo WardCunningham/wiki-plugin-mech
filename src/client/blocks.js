@@ -46,6 +46,10 @@ export function button(elem, label, handler) {
 export function element(key) {
   return document.getElementById(key)
 }
+
+export async function jfetch(url) {
+  return fetch(url).then(res => res.json())
+}
 /* c8 ignore stop */
 
 export async function run(nest, state) {
@@ -83,17 +87,13 @@ function hello_emit({ elem, args, state }) {
   state.api.response(elem, world)
 }
 
-function from_emit({ elem, args, body, state }) {
-  const line = elem.innerHTML
+async function from_emit({ elem, args, body, state }) {
+  if (!body?.length) return state.api.trouble(elem, `FROM expects indented blocks to follow.`)
   const url = args[0]
-  elem.innerHTML = line + ' ⏳'
-  fetch(`//${url}.json`)
-    .then(res => res.json())
-    .then(page => {
-      state.page = page
-      elem.innerHTML = line + ' ⌛'
-      run(body, state)
-    })
+  state.api.response(elem, ' ⏳')
+  state.page = await state.api.jfetch(`//${url}.json`)
+  state.api.response(elem, ' ⌛')
+  run(body, state)
 }
 
 function sensor_emit({ elem, args, body, state }) {

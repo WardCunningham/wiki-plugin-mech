@@ -31,6 +31,9 @@ const api = {
     this.log.push(`fetch ${url}`)
     return new Promise(res => res(this.files.shift()))
   },
+  status(elem, command, text) {
+    this.log.push(`status ${text}`)
+  },
   log: [],
   files: [],
   handler: null,
@@ -95,13 +98,14 @@ const api = {
       expect(api.log.join('|').replaceAll(tags, '')).to.be('response ⏳|fetch //datalog.json|response ⌛|response 😀')
     })
 
-    it('Testing Sensor Mech', async () => {
-      // await setup('FROM datalog|_SENSOR garage|__REPORT')
-      api.files.push({
-        story: [{ type: 'datalog', text: 'SENSOR garage http://home.c2.com:8023\n\nDAY 5000\nKEEP 10' }],
-      })
-      await setup('FROM datalog|_HELLO')
-      expect(api.log.join('|').replaceAll(tags, '')).to.be('response ⏳|fetch //datalog.json|response ⌛|response 😀')
+    it('see Testing Sensor Mech', async () => {
+      api.files.length = 0
+      api.files.push({ story: [{ type: 'datalog', text: 'SENSOR garage http://home.c2.com:8023' }] })
+      api.files.push({ '28FF2E41': 203, '28FF6BCE': 203, '28FF9763': 202 })
+      await setup('FROM datalog|_SENSOR garage|__REPORT')
+      expect(api.log.join('|').replaceAll(tags, '')).to.be(
+        'response ⏳|fetch //datalog.json|response ⌛|status |status  ⏳|fetch http://home.c2.com:8023|status  ⌛|response 54.80°F',
+      )
     })
   })
 }).call(this)

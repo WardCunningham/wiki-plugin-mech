@@ -1,5 +1,5 @@
 import { tree, format } from './interpreter.js'
-import { run, trouble, inspect, response, button, element, jfetch } from './blocks.js'
+import { run, trouble, inspect, response, button, element, jfetch, status } from './blocks.js'
 
 // (function() {
 ;('use strict')
@@ -33,7 +33,7 @@ function emit($item, item) {
     slug: $page.attr('id'),
     title: $page.data('data').title,
   }
-  const api = { trouble, inspect, response, button, element, jfetch }
+  const api = { trouble, inspect, response, button, element, jfetch, status }
   const state = { context, api }
   $item.append(`<div style="background-color:#eee;padding:15px;border-top:8px;">${html}</div>`)
   run(nest, state)

@@ -50,6 +50,11 @@ export function element(key) {
 export async function jfetch(url) {
   return fetch(url).then(res => res.json())
 }
+
+export function status(elem, command, text) {
+  elem.innerHTML = command + text
+}
+
 /* c8 ignore stop */
 
 export async function run(nest, state) {
@@ -96,34 +101,32 @@ async function from_emit({ elem, args, body, state }) {
   run(body, state)
 }
 
-function sensor_emit({ elem, args, body, state }) {
-  const line = elem.innerHTML.replaceAll(/ ⌛/g, '')
-  if (!('page' in state)) return trouble(elem, `Expect "page" as with FROM.`)
-  inspect(elem, 'page', state)
+function sensor_emit({ elem, command, args, body, state }) {
+  state.api.status(elem, command, '')
+  if (!('page' in state)) return state.api.trouble(elem, `Expect "page" as with FROM.`)
+  state.api.inspect(elem, 'page', state)
   const datalog = state.page.story.find(item => item.type == 'datalog')
-  if (!datalog) return trouble(elem, `Expect Datalog plugin in the page.`)
+  if (!datalog) return state.api.trouble(elem, `Expect Datalog plugin in the page.`)
   const device = args[0]
-  if (!device) return trouble(elem, `SENSOR needs a sensor name.`)
+  if (!device) return state.api.trouble(elem, `SENSOR needs a sensor name.`)
   const sensor = datalog.text
     .split(/\n/)
     .map(line => line.split(/ +/))
     .filter(fields => fields[0] == 'SENSOR')
     .find(fields => fields[1] == device)
-  if (!sensor) return trouble(elem, `Expect to find "${device}" in Datalog.`)
+  if (!sensor) return state.api.trouble(elem, `Expect to find "${device}" in Datalog.`)
   const url = sensor[2]
 
   const f = c => (9 / 5) * (c / 16) + 32
   const avg = a => a.reduce((s, e) => s + e, 0) / a.length
-  elem.innerHTML = line + ' ⏳'
-  fetch(url)
-    .then(res => res.json())
-    .then(data => {
-      if (state.debug) console.log({ sensor, data })
-      elem.innerHTML = line + ' ⌛'
-      const value = f(avg(Object.values(data)))
-      state.temperature = `${value.toFixed(2)}°F`
-      run(body, state)
-    })
+  state.api.status(elem, command, ' ⏳')
+  state.api.jfetch(url).then(data => {
+    if (state.debug) console.log({ sensor, data })
+    state.api.status(elem, command, ' ⌛')
+    const value = f(avg(Object.values(data)))
+    state.temperature = `${value.toFixed(2)}°F`
+    run(body, state)
+  })
 }
 
 function report_emit({ elem, command, state }) {

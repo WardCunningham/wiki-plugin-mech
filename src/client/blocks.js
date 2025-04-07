@@ -55,6 +55,18 @@ export function status(elem, command, text) {
   elem.innerHTML = command + text
 }
 
+export function sourceData(elem, topic) {
+  const item = elem.closest('.item')
+  const sources = requestSourceData(item, topic).map(({ div, result }) => ({
+    classList: [...div.classList],
+    id: div.dataset.id,
+    result,
+  }))
+  if (sources.length) return sources
+  trouble(elem, `Expected source for "${topic}" in the lineup.`)
+  return null
+}
+
 /* c8 ignore stop */
 
 export async function run(nest, state) {
@@ -137,23 +149,18 @@ function report_emit({ elem, command, state }) {
 }
 
 function source_emit({ elem, command, args, body, state }) {
-  if (!(args && args.length)) return trouble(elem, `Expected Source topic, like "markers" for Map markers.`)
+  if (!(args && args.length)) return state.api.trouble(elem, `Expected Source topic, like "markers" for Map markers.`)
   const topic = args[0]
-  const item = elem.closest('.item')
-  const sources = requestSourceData(item, topic)
-  if (!sources.length) return trouble(elem, `Expected source for "${topic}" in the lineup.`)
+  const sources = state.api.sourceData(elem, topic)
+  if (!sources) return
+  if (state.debug) console.log({ topic, sources })
   const count = type => {
-    const count = sources.filter(source => [...source.div.classList].includes(type)).length
+    const count = sources.filter(source => source.classList.includes(type)).length
     return count ? `${count} ${type}` : null
   }
   const counts = [count('map'), count('image'), count('frame'), count('assets')].filter(count => count).join(', ')
-  if (state.debug) console.log({ topic, sources })
-  elem.innerHTML = command + ' ⇒ ' + counts
-  // state.assets = ?
-  // state.aspect = ?
-  // state.region = ?
-  // state.marker = ?
-  state[topic] = sources.map(({ div, result }) => ({ id: div.dataset.id, result }))
+  state.api.status(elem, command, ' ⇒ ' + counts)
+  state[topic] = sources.map(({ id, result }) => ({ id, result }))
   if (body) run(body, state)
 }
 

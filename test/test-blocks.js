@@ -34,6 +34,11 @@ const api = {
   status(elem, command, text) {
     this.log.push(`status ${text}`)
   },
+  sourceData(elem, topic) {
+    this.log.push(`source ${topic}`)
+    return this.files.shift()
+  },
+
   log: [],
   files: [],
   handler: null,
@@ -107,5 +112,24 @@ const api = {
         'response ⏳|fetch //datalog.json|response ⌛|status |status  ⏳|fetch http://home.c2.com:8023|status  ⌛|response 54.80°F',
       )
     })
+
+    it('simple SOURCE', async () => {
+      api.files.length = 0
+      const marker = { lat: '45.12', lon: '-122.67', label: 'Everywhere' }
+      const map = id => ({ classList: ['item', 'map'], id, result: [marker] })
+      const image = id => ({ classList: ['item', 'image'], id, result: marker })
+      api.files.push([image('2938'), map('32380'), image('37923')])
+      await setup('SOURCE marker')
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('source marker|status  ⇒ 1 map, 2 image')
+    })
+    // it('see Testing Marker Mech', async () => {
+    //    api.files.length = 0
+    //    const map1 = {classList:['item','map'],id:'34580345',result:[{lat:'45.12',lon:'-122.67',label:'Everywhere'}]}
+    //    const img1 = {classList:['item','image'],id:'09384059',result:{lat:'45.13',lon:'-122.56',label:'Here'}}
+    //    const img2 = {classList:['item','image'],id:'98408023',result:{lat:'45.23',lon:'-122.57',label:'There'}}
+    //    api.files.push({topic:'marker',sources:[img1,map1,img2]})
+    //    await setup('SOURCE marker|_PREVIEW synopsis map')
+    //    expect(api.log.join('|').replaceAll(tags, '')).to.be('source marker|status  ⇒ 1 map, 2 image')
+    //  })
   })
 }).call(this)

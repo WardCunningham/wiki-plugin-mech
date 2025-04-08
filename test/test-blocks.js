@@ -38,6 +38,9 @@ const api = {
     this.log.push(`source ${topic}`)
     return this.files.shift()
   },
+  showResult(elem, page) {
+    this.log.push(`show ${page.title}`)
+  },
 
   log: [],
   files: [],
@@ -68,6 +71,7 @@ const api = {
       await setup('BadLuck')
       expect(api.log.join('|')).to.be('trouble Expected line to begin with all-caps keyword.')
     })
+
     it('CLICK HELLO', async () => {
       await setup('CLICK|_HELLO')
       await api.click(false)
@@ -82,6 +86,7 @@ const api = {
       await setup('CLICK')
       expect(api.log.join('|').replaceAll(tags, '')).to.be('trouble CLICK expects indented blocks to follow.')
     })
+
     it('simple REPORT', async () => {
       await setup('REPORT', { temperature: '98.6°F' })
       var result = api.log.join('|').replaceAll(tags, '<$1>')
@@ -92,6 +97,7 @@ const api = {
       var result = api.log.join('|').replaceAll(tags, '<$1>')
       expect(result).to.be('trouble Expect data, as from SENSOR.')
     })
+
     it('trouble FROM', async () => {
       api.files.push({ story: [{}] })
       await setup('FROM datalog')
@@ -122,14 +128,15 @@ const api = {
       await setup('SOURCE marker')
       expect(api.log.join('|').replaceAll(tags, '')).to.be('source marker|status  ⇒ 1 map, 2 image')
     })
-    // it('see Testing Marker Mech', async () => {
-    //    api.files.length = 0
-    //    const map1 = {classList:['item','map'],id:'34580345',result:[{lat:'45.12',lon:'-122.67',label:'Everywhere'}]}
-    //    const img1 = {classList:['item','image'],id:'09384059',result:{lat:'45.13',lon:'-122.56',label:'Here'}}
-    //    const img2 = {classList:['item','image'],id:'98408023',result:{lat:'45.23',lon:'-122.57',label:'There'}}
-    //    api.files.push({topic:'marker',sources:[img1,map1,img2]})
-    //    await setup('SOURCE marker|_PREVIEW synopsis map')
-    //    expect(api.log.join('|').replaceAll(tags, '')).to.be('source marker|status  ⇒ 1 map, 2 image')
-    //  })
+    it('see Testing Marker Mech', async () => {
+      api.files.length = 0
+      const marker = { lat: '45.12', lon: '-122.67', label: 'Everywhere' }
+      const map = id => ({ classList: ['item', 'map'], id, result: [marker] })
+      const image = id => ({ classList: ['item', 'image'], id, result: marker })
+      api.files.push([image('2938'), map('32380'), image('37923')])
+      const context = { title: 'Testing Sensor Mech', itemId: '38FD2E42' }
+      await setup('SOURCE marker|_PREVIEW synopsis map', { context })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('source marker|status  ⇒ 1 map, 2 image|show Mech Preview')
+    })
   })
 }).call(this)

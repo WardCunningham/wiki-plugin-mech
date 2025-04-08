@@ -67,6 +67,11 @@ export function sourceData(elem, topic) {
   return null
 }
 
+export function showResult(elem, page) {
+  const options = { $page: $(elem.closest('.page')) }
+  wiki.showResult(wiki.newPage(page), options)
+}
+
 /* c8 ignore stop */
 
 export async function run(nest, state) {
@@ -173,7 +178,7 @@ function preview_emit({ elem, command, args, state }) {
       case 'map':
         if (!('marker' in state))
           return trouble(elem, `"map" preview expects "marker" state, like from "SOURCE marker".`)
-        inspect(elem, 'marker', state)
+        state.api.inspect(elem, 'marker', state)
         const text = state.marker
           .map(marker => [marker.result])
           .flat(2)
@@ -185,7 +190,7 @@ function preview_emit({ elem, command, args, state }) {
       case 'graph':
         if (!('aspect' in state))
           return trouble(elem, `"graph" preview expects "aspect" state, like from "SOURCE aspect".`)
-        inspect(elem, 'aspect', state)
+        state.api.inspect(elem, 'aspect', state)
         for (const { div, result } of state.aspect) {
           for (const { name, graph } of result) {
             if (state.debug) console.log({ div, result, name, graph })
@@ -197,19 +202,17 @@ function preview_emit({ elem, command, args, state }) {
         break
       case 'items':
         if (!('items' in state)) return trouble(elem, `"graph" preview expects "items" state, like from "KWIC".`)
-        inspect(elem, 'items', state)
+        state.api.inspect(elem, 'items', state)
         story.push(...state.items)
         break
       case 'page':
         if (!('page' in state)) return trouble(elem, `"page" preview expects "page" state, like from "FROM".`)
-        inspect(elem, 'page', state)
+        state.api.inspect(elem, 'page', state)
         story.push(...state.page.story)
         break
       case 'synopsis':
-        {
-          const text = `This page created with Mech command: "${command}". See [[${state.context.title}]].`
-          story.push({ type: 'paragraph', text, id: state.context.itemId })
-        }
+        const text2 = `This page created with Mech command: "${command}". See [[${state.context.title}]].`
+        story.push({ type: 'paragraph', text:text2, id: state.context.itemId })
         break
       default:
         return trouble(elem, `"${type}" doesn't name an item we can preview`)
@@ -221,8 +224,7 @@ function preview_emit({ elem, command, args, state }) {
   const item = JSON.parse(JSON.stringify(page))
   const date = Date.now()
   page.journal = [{ type: 'create', date, item }]
-  const options = { $page: $(elem.closest('.page')) }
-  wiki.showResult(wiki.newPage(page), options)
+  state.api.showResult(elem, page)
 }
 
 async function neighbors_emit({ elem, command, args, body, state }) {

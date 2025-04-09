@@ -177,7 +177,7 @@ function preview_emit({ elem, command, args, state }) {
     switch (type) {
       case 'map':
         if (!('marker' in state))
-          return trouble(elem, `"map" preview expects "marker" state, like from "SOURCE marker".`)
+          return state.api.trouble(elem, `"map" preview expects "marker" state, like from "SOURCE marker".`)
         state.api.inspect(elem, 'marker', state)
         const text = state.marker
           .map(marker => [marker.result])
@@ -189,7 +189,7 @@ function preview_emit({ elem, command, args, state }) {
         break
       case 'graph':
         if (!('aspect' in state))
-          return trouble(elem, `"graph" preview expects "aspect" state, like from "SOURCE aspect".`)
+          return state.api.trouble(elem, `"graph" preview expects "aspect" state, like from "SOURCE aspect".`)
         state.api.inspect(elem, 'aspect', state)
         for (const { div, result } of state.aspect) {
           for (const { name, graph } of result) {
@@ -201,21 +201,22 @@ function preview_emit({ elem, command, args, state }) {
         }
         break
       case 'items':
-        if (!('items' in state)) return trouble(elem, `"graph" preview expects "items" state, like from "KWIC".`)
+        if (!('items' in state))
+          return state.api.trouble(elem, `"graph" preview expects "items" state, like from "KWIC".`)
         state.api.inspect(elem, 'items', state)
         story.push(...state.items)
         break
       case 'page':
-        if (!('page' in state)) return trouble(elem, `"page" preview expects "page" state, like from "FROM".`)
+        if (!('page' in state)) return state.api.trouble(elem, `"page" preview expects "page" state, like from "FROM".`)
         state.api.inspect(elem, 'page', state)
         story.push(...state.page.story)
         break
       case 'synopsis':
         const text2 = `This page created with Mech command: "${command}". See [[${state.context.title}]].`
-        story.push({ type: 'paragraph', text:text2, id: state.context.itemId })
+        story.push({ type: 'paragraph', text: text2, id: state.context.itemId })
         break
       default:
-        return trouble(elem, `"${type}" doesn't name an item we can preview`)
+        return state.api.trouble(elem, `"${type}" doesn't name an item we can preview`)
     }
   }
   const title = 'Mech Preview' + (state.tick ? ` ${state.tick}` : '')

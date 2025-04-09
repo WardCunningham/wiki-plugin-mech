@@ -138,5 +138,33 @@ const api = {
       await setup('SOURCE marker|_PREVIEW synopsis map', { context })
       expect(api.log.join('|').replaceAll(tags, '')).to.be('source marker|status  ⇒ 1 map, 2 image|show Mech Preview')
     })
+
+    it('simple PREVIEW graph', async () => {
+      const nodes = [{ type: 'one', in: [1], out: [1], props: {} }]
+      const rels = [{ type: 'loop', from: 0, to: 0, props: {} }]
+      const result = [{ name: 'first', graph: { nodes, rels } }]
+      const aspect = [{ div: 'unused?', result }]
+      const context = { title: 'Testing Sensor Mech', itemId: 'U4Q9RD22' }
+      await setup('PREVIEW graph', { context, aspect })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('show Mech Preview')
+    })
+    it('simple PREVIEW items', async () => {
+      const items = [{ type: 'map', text: '45.12, -122.67 Everywhere' }]
+      const context = { title: 'Testing Sensor Mech', itemId: '08OQWEIR' }
+      await setup('PREVIEW items', { context, items })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('show Mech Preview')
+    })
+    it('simple PREVIEW page', async () => {
+      const story = [{ type: 'map', text: '45.12, -122.67 Everywhere' }]
+      const page = { title: 'Map Page', story }
+      const context = { title: 'Testing Sensor Mech', itemId: '084QIWEO' }
+      await setup('PREVIEW page', { context, page })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('show Mech Preview')
+    })
+    it('trouble PREVIEW foobar', async () => {
+      const context = { title: 'Testing Sensor Mech', itemId: '923EDSVS' }
+      await setup('PREVIEW foobar', { context })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('trouble "foobar" doesn\'t name an item we can preview')
+    })
   })
 }).call(this)

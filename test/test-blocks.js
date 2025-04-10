@@ -241,5 +241,61 @@ const api = {
       await setup('WALK 2 steps', { neighborhood })
       expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 2 nodes|publish aspect')
     })
+    it('test WALK 1 hubs', async () => {
+      const domain = 'fed.wiki'
+      const info = (title, link) => ({
+        title,
+        slug: mech.asSlug(title),
+        domain,
+        date: 1517758360043,
+        synopsis: `All about ${title}.`,
+        links: Object.fromEntries([[link, '02384089']]),
+      })
+      const neighborhood = [info('Ying', 'yang'), info('Yang', 'ying'), info('Ding', 'yang')]
+      await setup('WALK 1 hubs', { neighborhood })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
+    })
+    it('test WALK 1 days', async () => {
+      const domain = 'fed.wiki'
+      const info = (title, link) => ({
+        title,
+        slug: mech.asSlug(title),
+        domain,
+        date: Date.now() - 10000,
+        synopsis: `All about ${title}.`,
+        links: Object.fromEntries([[link, '02384089']]),
+      })
+      const neighborhood = [info('Ying', 'yang'), info('Yang', 'ying'), info('Ding', 'yang')]
+      await setup('WALK 1 days', { neighborhood })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
+    })
+    it('test WALK 1 weeks', async () => {
+      const domain = 'fed.wiki'
+      const info = (title, link) => ({
+        title,
+        slug: mech.asSlug(title),
+        domain,
+        date: Date.now() - 10000,
+        synopsis: `All about ${title}.`,
+        links: Object.fromEntries([[link, '02384089']]),
+      })
+      const neighborhood = [info('Ying', 'yang'), info('Yang', 'ying'), info('Ding', 'yang')]
+      await setup('WALK 1 weeks', { neighborhood })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
+    })
+    it('test WALK 1 months', async () => {
+      const domain = 'fed.wiki'
+      const info = (title, link) => ({
+        title,
+        slug: mech.asSlug(title),
+        domain,
+        date: Date.now() - 10000,
+        synopsis: `All about ${title}.`,
+        links: Object.fromEntries([[link, '02384089']]),
+      })
+      const neighborhood = [info('Ying', 'yang'), info('Yang', 'ying'), info('Ding', 'yang')]
+      await setup('WALK 1 months', { neighborhood })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
+    })
   })
 }).call(this)

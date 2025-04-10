@@ -41,6 +41,13 @@ const api = {
   showResult(elem, page) {
     this.log.push(`show ${page.title}`)
   },
+  neighborhood(want) {
+    this.log.push(`neighbors`)
+    return this.files
+      .shift()
+      .filter(([domain, site]) => !want || domain.includes(want))
+      .map(([domain, site]) => (site.sitemap || []).map(info => Object.assign({ domain }, info)))
+  },
 
   log: [],
   files: [],
@@ -165,6 +172,38 @@ const api = {
       const context = { title: 'Testing Sensor Mech', itemId: '923EDSVS' }
       await setup('PREVIEW foobar', { context })
       expect(api.log.join('|').replaceAll(tags, '')).to.be('trouble "foobar" doesn\'t name an item we can preview')
+    })
+    it('simple NEIGHBORS', async () => {
+      api.files.length = 0
+      const domain = 'fed.wiki'
+      const info = title => ({ title, slug: mech.asSlug(title), date: 1517758360043, synopsis: `All about ${title}.` })
+      const site = { sitemap: [info('Hello World'), info('New World Order')] }
+      api.files.push([[domain, site]])
+      await setup('NEIGHBORS', { debug: true })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('neighbors|response ⇒ 2 pages, 1 sites')
+    })
+    it('augmented NEIGHBORS', async () => {
+      api.files.length = 0
+      const domain = 'fed.wiki'
+      const info = title => ({ title, slug: mech.asSlug(title), date: 1517758360043, synopsis: `All about ${title}.` })
+      const site = { sitemap: [info('Hello World'), info('Test Survey')] }
+      api.files.push([[domain, site]])
+      api.files.push({ story: [{ type: 'frame', survey: [] }] })
+      await setup('NEIGHBORS|_Test Survey', { debug: true })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be(
+        'neighbors|response ⇒ 1 sites|fetch //fed.wiki/test-survey.json|response ⇒ 2 pages, 1 sites',
+      )
+    })
+    it('troubles NEIGHBORS', async () => {
+      api.files.length = 0
+      const domain = 'fed.wiki'
+      const info = title => ({ title, slug: mech.asSlug(title), date: 1517758360043, synopsis: `All about ${title}.` })
+      const site = { sitemap: [info('Hello World'), info('Test Survey')] }
+      api.files.push([[domain, site]])
+      await setup('NEIGHBORS|_Test Trouble', { debug: true })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be(
+        'neighbors|trouble NEIGHBORS expects a Site Survey title, like Pattern Link Survey|response ⇒ 2 pages, 1 sites',
+      )
     })
   })
 }).call(this)

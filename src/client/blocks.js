@@ -48,7 +48,7 @@ export function element(key) {
 }
 
 export async function jfetch(url) {
-  return fetch(url).then(res => res.json())
+  return fetch(url).then(res => (res.ok ? res.json() : null))
 }
 
 export function status(elem, command, text) {
@@ -70,6 +70,12 @@ export function sourceData(elem, topic) {
 export function showResult(elem, page) {
   const options = { $page: $(elem.closest('.page')) }
   wiki.showResult(wiki.newPage(page), options)
+}
+
+export function neighborhood(want) {
+  return Object.entries(wiki.neighborhoodObject.sites)
+    .filter(([domain, site]) => !site.sitemapRequestInflight && (!want || domain.includes(want)))
+    .map(([domain, site]) => (site.sitemap || []).map(info => Object.assign({ domain }, info)))
 }
 
 /* c8 ignore stop */
@@ -229,23 +235,22 @@ function preview_emit({ elem, command, args, state }) {
 }
 
 async function neighbors_emit({ elem, command, args, body, state }) {
-  const belem = probe => document.getElementById(probe.key)
+  const belem = probe => state.api.element(probe.key)
   const want = args[0]
-  if (state.debug) console.log({ neighborhoodObject: wiki.neighborhoodObject })
-  const have = Object.entries(wiki.neighborhoodObject.sites)
-    .filter(([domain, site]) => !site.sitemapRequestInflight && (!want || domain.includes(want)))
-    .map(([domain, site]) => (site.sitemap || []).map(info => Object.assign({ domain }, info)))
+  const have = state.api.neighborhood(want)
   for (const probe of body || []) {
     if (!probe.command.endsWith(' Survey')) {
-      trouble(belem(probe), `NEIGHBORS expects a Site Survey title, like Pattern Link Survey`)
+      state.api.trouble(belem(probe), `NEIGHBORS expects a Site Survey title, like Pattern Link Survey`)
       continue
     }
     const todos = have.filter(sitemap => sitemap.find(info => info.title == probe.command))
-    belem(probe).innerHTML = `${probe.command} ⇒ ${todos.length} sites`
+    state.api.response(belem(probe), ` ⇒ ${todos.length} sites`)
     for (const todo of todos) {
       const url = `//${todo[0].domain}/${asSlug(probe.command)}.json`
-      const page = await fetch(url).then(res => res.json())
+      const page = await state.api.jfetch(url)
+      if (!page) continue
       const survey = page.story.find(item => item.type == 'frame')?.survey
+      if (!survey) continue
       for (const info of todo) {
         const extra = Object.assign(
           {},
@@ -258,7 +263,7 @@ async function neighbors_emit({ elem, command, args, body, state }) {
     }
   }
   state.neighborhood = have.flat().sort((a, b) => b.date - a.date)
-  elem.innerHTML = command + ` ⇒ ${state.neighborhood.length} pages, ${have.length} sites`
+  state.api.response(elem, ` ⇒ ${state.neighborhood.length} pages, ${have.length} sites`)
 }
 
 function walk_emit({ elem, command, args, state }) {

@@ -67,6 +67,12 @@ export function sourceData(elem, topic) {
   return null
 }
 
+export function publishSourceData(elem, topic, data) {
+  const item = elem.closest('.item')
+  item.classList.add('aspect-source')
+  item.aspectData = () => data
+}
+
 export function showResult(elem, page) {
   const options = { $page: $(elem.closest('.page')) }
   wiki.showResult(wiki.newPage(page), options)
@@ -267,10 +273,10 @@ async function neighbors_emit({ elem, command, args, body, state }) {
 }
 
 function walk_emit({ elem, command, args, state }) {
-  if (!('neighborhood' in state)) return trouble(elem, `WALK expects state.neighborhood, like from NEIGHBORS.`)
-  inspect(elem, 'neighborhood', state)
+  if (!('neighborhood' in state)) return state.api.trouble(elem, `WALK expects state.neighborhood, like from NEIGHBORS.`)
+  state.api.inspect(elem, 'neighborhood', state)
   const [, count, way] = command.match(/\b(\d+)? *(steps|days|weeks|months|hubs|lineup|references)\b/) || []
-  if (!way && command != 'WALK') return trouble(elem, `WALK can't understand rest of this block.`)
+  if (!way && command != 'WALK') return tate.api.trouble(elem, `WALK can't understand rest of this block.`)
   const scope = {
     lineup() {
       const items = [...document.querySelectorAll('.page')]
@@ -288,18 +294,18 @@ function walk_emit({ elem, command, args, state }) {
   const steps = walks(count, way, state.neighborhood, scope)
   const aspects = steps.filter(({ graph }) => graph)
   if (state.debug) console.log({ steps })
-  elem.innerHTML = command
   const nodes = aspects.map(({ graph }) => graph.nodes).flat()
-  elem.innerHTML += ` ⇒ ${aspects.length} aspects, ${nodes.length} nodes`
-  if (steps.find(({ graph }) => !graph)) trouble(elem, `WALK skipped sites with no links in sitemaps`)
-  const item = elem.closest('.item')
+  state.api.status(elem, command, ` ⇒ ${aspects.length} aspects, ${nodes.length} nodes`)
+  if (steps.find(({ graph }) => !graph)) state.api.trouble(elem, `WALK skipped sites with no links in sitemaps`)
   if (aspects.length) {
     state.aspect = state.aspect || []
     const obj = state.aspect.find(obj => obj.id == elem.id)
     if (obj) obj.result = aspects
     else state.aspect.push({ id: elem.id, result: aspects, source: command })
-    item.classList.add('aspect-source')
-    item.aspectData = () => state.aspect.map(obj => obj.result).flat()
+    // const item = elem.closest('.item')
+    // item.classList.add('aspect-source')
+    // item.aspectData = () => state.aspect.map(obj => obj.result).flat()
+    state.api.publishSourceData(elem,'aspect',state.aspect.map(obj => obj.result).flat())
     if (state.debug) console.log({ command, state: state.aspect, item: item.aspectData() })
   }
 }

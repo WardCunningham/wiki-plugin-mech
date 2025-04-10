@@ -11,6 +11,7 @@ import {
   sourceData,
   showResult,
   neighborhood,
+  publishSourceData,
 } from './blocks.js'
 
 // (function() {
@@ -45,7 +46,7 @@ function emit($item, item) {
     slug: $page.attr('id'),
     title: $page.data('data').title,
   }
-  const api = { trouble, inspect, response, button, element, jfetch, status, sourceData, showResult, neighborhood }
+  const api = { trouble, inspect, response, button, element, jfetch, status, sourceData, showResult, neighborhood, publishSourceData }
   const state = { context, api }
   $item.append(`<div style="background-color:#eee;padding:15px;border-top:8px;">${html}</div>`)
   run(nest, state)

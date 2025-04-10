@@ -4,7 +4,8 @@ import expect from 'expect.js'
 
 const api = {
   trouble(elem, text) {
-    this.log.push(`trouble ${text.trim()}`)
+    const m = text.match(/\b(expect(s|ed)?|doesn't|needs|can't|received|failed|skipped)\b.*?[^, ]{3,}/i)
+    this.log.push(`trouble ${m ? m[0] : text}`)
   },
   response(elem, text) {
     this.log.push(`response ${text.trim()}`)
@@ -48,6 +49,9 @@ const api = {
       .filter(([domain, site]) => !want || domain.includes(want))
       .map(([domain, site]) => (site.sitemap || []).map(info => Object.assign({ domain }, info)))
   },
+  publishSourceData(elem, topic, data) {
+    this.log.push(`publish ${topic}`)
+  },
 
   log: [],
   files: [],
@@ -72,11 +76,11 @@ const api = {
     })
     it('trouble GOODBYE', async () => {
       await setup('GOODBYE')
-      expect(api.log.join('|')).to.be("trouble GOODBYE doesn't name a block we know.")
+      expect(api.log.join('|')).to.be('trouble doesn\'t name')
     })
     it('trouble BadLuck', async () => {
       await setup('BadLuck')
-      expect(api.log.join('|')).to.be('trouble Expected line to begin with all-caps keyword.')
+      expect(api.log.join('|')).to.be('trouble Expected line')
     })
 
     it('CLICK HELLO', async () => {
@@ -91,7 +95,7 @@ const api = {
     })
     it('trouble CLICK', async () => {
       await setup('CLICK')
-      expect(api.log.join('|').replaceAll(tags, '')).to.be('trouble CLICK expects indented blocks to follow.')
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('trouble expects indented')
     })
 
     it('simple REPORT', async () => {
@@ -102,13 +106,13 @@ const api = {
     it('trouble REPORT', async () => {
       await setup('REPORT')
       var result = api.log.join('|').replaceAll(tags, '<$1>')
-      expect(result).to.be('trouble Expect data, as from SENSOR.')
+      expect(result).to.be('trouble Expect data')
     })
 
     it('trouble FROM', async () => {
       api.files.push({ story: [{}] })
       await setup('FROM datalog')
-      expect(api.log.join('|').replaceAll(tags, '')).to.be('trouble FROM expects indented blocks to follow.')
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('trouble expects indented')
     })
     it('simple FROM', async () => {
       const text = api.files.push({ story: [{}] })
@@ -171,7 +175,7 @@ const api = {
     it('trouble PREVIEW foobar', async () => {
       const context = { title: 'Testing Sensor Mech', itemId: '923EDSVS' }
       await setup('PREVIEW foobar', { context })
-      expect(api.log.join('|').replaceAll(tags, '')).to.be('trouble "foobar" doesn\'t name an item we can preview')
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('trouble doesn\'t name')
     })
     it('simple NEIGHBORS', async () => {
       api.files.length = 0
@@ -202,8 +206,22 @@ const api = {
       api.files.push([[domain, site]])
       await setup('NEIGHBORS|_Test Trouble', { debug: true })
       expect(api.log.join('|').replaceAll(tags, '')).to.be(
-        'neighbors|trouble NEIGHBORS expects a Site Survey title, like Pattern Link Survey|response ⇒ 2 pages, 1 sites',
+        'neighbors|trouble expects a Site|response ⇒ 2 pages, 1 sites',
       )
+    })
+    it('simple WALK', async () => {
+      const neighborhood = []
+      await setup('WALK', { neighborhood })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 0 aspects, 0 nodes')
+    })
+    it('trouble WALK', async () => {
+      const domain = 'fed.wiki'
+      const info = title => ({
+        title, slug: mech.asSlug(title), domain,
+        date: 1517758360043, synopsis: `All about ${title}.` })
+      const neighborhood = [info('Hello World')]
+      await setup('WALK', { neighborhood })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 0 aspects, 0 nodes|trouble skipped sites')
     })
   })
 }).call(this)

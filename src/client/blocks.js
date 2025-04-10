@@ -273,7 +273,8 @@ async function neighbors_emit({ elem, command, args, body, state }) {
 }
 
 function walk_emit({ elem, command, args, state }) {
-  if (!('neighborhood' in state)) return state.api.trouble(elem, `WALK expects state.neighborhood, like from NEIGHBORS.`)
+  if (!('neighborhood' in state))
+    return state.api.trouble(elem, `WALK expects state.neighborhood, like from NEIGHBORS.`)
   state.api.inspect(elem, 'neighborhood', state)
   const [, count, way] = command.match(/\b(\d+)? *(steps|days|weeks|months|hubs|lineup|references)\b/) || []
   if (!way && command != 'WALK') return tate.api.trouble(elem, `WALK can't understand rest of this block.`)
@@ -305,7 +306,7 @@ function walk_emit({ elem, command, args, state }) {
     // const item = elem.closest('.item')
     // item.classList.add('aspect-source')
     // item.aspectData = () => state.aspect.map(obj => obj.result).flat()
-    state.api.publishSourceData(elem,'aspect',state.aspect.map(obj => obj.result).flat())
+    state.api.publishSourceData(elem, 'aspect', state.aspect.map(obj => obj.result).flat())
     if (state.debug) console.log({ command, state: state.aspect, item: item.aspectData() })
   }
 }

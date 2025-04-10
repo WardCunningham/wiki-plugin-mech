@@ -76,7 +76,7 @@ const api = {
     })
     it('trouble GOODBYE', async () => {
       await setup('GOODBYE')
-      expect(api.log.join('|')).to.be('trouble doesn\'t name')
+      expect(api.log.join('|')).to.be("trouble doesn't name")
     })
     it('trouble BadLuck', async () => {
       await setup('BadLuck')
@@ -175,7 +175,7 @@ const api = {
     it('trouble PREVIEW foobar', async () => {
       const context = { title: 'Testing Sensor Mech', itemId: '923EDSVS' }
       await setup('PREVIEW foobar', { context })
-      expect(api.log.join('|').replaceAll(tags, '')).to.be('trouble doesn\'t name')
+      expect(api.log.join('|').replaceAll(tags, '')).to.be("trouble doesn't name")
     })
     it('simple NEIGHBORS', async () => {
       api.files.length = 0
@@ -183,7 +183,7 @@ const api = {
       const info = title => ({ title, slug: mech.asSlug(title), date: 1517758360043, synopsis: `All about ${title}.` })
       const site = { sitemap: [info('Hello World'), info('New World Order')] }
       api.files.push([[domain, site]])
-      await setup('NEIGHBORS', { debug: true })
+      await setup('NEIGHBORS', {})
       expect(api.log.join('|').replaceAll(tags, '')).to.be('neighbors|response ⇒ 2 pages, 1 sites')
     })
     it('augmented NEIGHBORS', async () => {
@@ -193,7 +193,7 @@ const api = {
       const site = { sitemap: [info('Hello World'), info('Test Survey')] }
       api.files.push([[domain, site]])
       api.files.push({ story: [{ type: 'frame', survey: [] }] })
-      await setup('NEIGHBORS|_Test Survey', { debug: true })
+      await setup('NEIGHBORS|_Test Survey', {})
       expect(api.log.join('|').replaceAll(tags, '')).to.be(
         'neighbors|response ⇒ 1 sites|fetch //fed.wiki/test-survey.json|response ⇒ 2 pages, 1 sites',
       )
@@ -204,7 +204,7 @@ const api = {
       const info = title => ({ title, slug: mech.asSlug(title), date: 1517758360043, synopsis: `All about ${title}.` })
       const site = { sitemap: [info('Hello World'), info('Test Survey')] }
       api.files.push([[domain, site]])
-      await setup('NEIGHBORS|_Test Trouble', { debug: true })
+      await setup('NEIGHBORS|_Test Trouble', {})
       expect(api.log.join('|').replaceAll(tags, '')).to.be(
         'neighbors|trouble expects a Site|response ⇒ 2 pages, 1 sites',
       )
@@ -217,11 +217,29 @@ const api = {
     it('trouble WALK', async () => {
       const domain = 'fed.wiki'
       const info = title => ({
-        title, slug: mech.asSlug(title), domain,
-        date: 1517758360043, synopsis: `All about ${title}.` })
+        title,
+        slug: mech.asSlug(title),
+        domain,
+        date: 1517758360043,
+        synopsis: `All about ${title}.`,
+      })
       const neighborhood = [info('Hello World')]
       await setup('WALK', { neighborhood })
       expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 0 aspects, 0 nodes|trouble skipped sites')
+    })
+    it('test WALK 2 steps', async () => {
+      const domain = 'fed.wiki'
+      const info = (title, link) => ({
+        title,
+        slug: mech.asSlug(title),
+        domain,
+        date: 1517758360043,
+        synopsis: `All about ${title}.`,
+        links: Object.fromEntries([[link, '02384089']]),
+      })
+      const neighborhood = [info('Ying', 'yang'), info('Yang', 'ying')]
+      await setup('WALK 2 steps', { neighborhood })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 2 nodes|publish aspect')
     })
   })
 }).call(this)

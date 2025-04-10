@@ -1,0 +1,50 @@
+Expected source for "${topic}" in the lineup.
+${op} doesn't name a block we know.
+Expected line to begin with all-caps keyword.
+CLICK expects indented blocks to follow.
+FROM expects indented blocks to follow.
+Expect "page" as with FROM.
+Expect Datalog plugin in the page.
+SENSOR needs a sensor name.
+Expect to find "${device}" in Datalog.
+Expect data, as from SENSOR.
+Expected Source topic, like "markers" for Map markers.
+"map" preview expects "marker" state, like from "SOURCE marker".
+"graph" preview expects "aspect" state, like from "SOURCE aspect".
+"graph" preview expects "items" state, like from "KWIC".
+"page" preview expects "page" state, like from "FROM".
+"${type}" doesn't name an item we can preview
+NEIGHBORS expects a Site Survey title, like Pattern Link Survey
+WALK expects state.neighborhood, like from NEIGHBORS.
+WALK can't understand rest of this block.
+WALK skipped sites with no links in sitemaps
+TICK expects indented blocks to follow.
+TICK expects a count from 1 to 99
+UNTIL expects an argument, a word to stop running.
+UNTIL expects to indented below an iterator, like TICKS.
+UNTIL expects "aspect", like from WALK.
+FORWARD expects an argument, the number of steps to move a "turtle".
+TURN expects an argument, the number of degrees to turn a "turtle".
+FILE expects state.assets, like from SOURCE assets.
+FILE expects an argument, the dot suffix for desired files.`)
+'FILE expects indented blocks to follow.
+FILE expects to find an asset with "${suffix}" suffix.
+KWIK expects $K or $W in link prototype.
+KWIC expects a .tsv file, like from ASSETS .tsv.
+SHOW expects a slug or site/slug to open in the lineup.
+SHOW expects a page not already in the lineup.
+RANDOM expected a neighborhood, like from NEIGHBORS.
+SLEEP expects seconds from 1 to 99
+TOGETHER expects indented commands to run together.
+GET expects indented commands to run on the server.
+GET expected "${arg}" to name state or site.
+RUN received error "${result.err}"
+RUN failed with "${err.message}"
+DELTA expects argument, "have" or "apply" on client.
+DELTA doesn't expect indented input.
+DELTA apply expect "actions" as input.
+DELTA doesn't know "${args[0]}".
+ROSTER expected a neighborhood, like from NEIGHBORS.
+LISTEN expects argument, an action.
+MESSAGE expects argument, an action.
+"SOLO" expects "aspect" state, like from "WALK".

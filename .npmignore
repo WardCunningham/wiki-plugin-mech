@@ -1,3 +1,12 @@
-Gruntfile.js
-test
 status
+assets
+coverage
+scripts
+src
+test
+meta-client.json
+eslint.config.js
+.github
+.prettier*
+.vscode
+.zed

@@ -12,6 +12,8 @@ import {
   showResult,
   neighborhood,
   publishSourceData,
+  newSVG,
+  SVGline,
 } from './blocks.js'
 
 // (function() {
@@ -58,6 +60,8 @@ function emit($item, item) {
     showResult,
     neighborhood,
     publishSourceData,
+    newSVG,
+    SVGline,
   }
   const state = { context, api }
   $item.append(`<div style="background-color:#eee;padding:15px;border-top:8px;">${html}</div>`)

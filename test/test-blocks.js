@@ -53,6 +53,13 @@ const api = {
     this.log.push(`publish ${topic}`)
   },
 
+  newSVG(elem) {
+    this.log.push('svg')
+    return 'an svg object'
+  },
+
+  SVGline(svg, [x1, y1], [x2, y2]) {},
+
   log: [],
   files: [],
   handler: null,
@@ -296,6 +303,20 @@ const api = {
       const neighborhood = [info('Ying', 'yang'), info('Yang', 'ying'), info('Ding', 'yang')]
       await setup('WALK 1 months', { neighborhood })
       expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
+    })
+    it('simple FORWARD', async () => {
+      await setup('FORWARD 100', {})
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('svg|status  ⇒ 0.0, 100.0')
+    })
+    it('simple TURN', async () => {
+      await setup('TURN 90', {})
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('svg|status  ⇒ 90°')
+    })
+    it('test FORWARD and TURN', async () => {
+      await setup('FORWARD 3|TURN 90|FORWARD 4|TURN 143.13|FORWARD 5', {})
+      expect(api.log.join('|').replaceAll(tags, '')).to.be(
+        'svg|status  ⇒ 0.0, 3.0|status  ⇒ 90°|status  ⇒ 4.0, 3.0|status  ⇒ 233.13°|status  ⇒ 0.0, -0.0',
+      )
     })
   })
 }).call(this)

@@ -84,6 +84,34 @@ export function neighborhood(want) {
     .map(([domain, site]) => (site.sitemap || []).map(info => Object.assign({ domain }, info)))
 }
 
+export function newSVG(elem) {
+  const div = document.createElement('div')
+  elem.closest('.item').firstElementChild.prepend(div)
+  div.outerHTML = `
+        <div style="border:1px solid black; background-color:#f8f8f8; margin-bottom:16px;">
+          <svg viewBox="0 0 400 400" width=100% height=400>
+            <circle id=dot r=5 cx=200 cy=200 stroke="#ccc"></circle>
+          </svg>
+        </div>`
+  const svg = elem.closest('.item').getElementsByTagName('svg')[0]
+  return svg
+}
+
+export function SVGline(svg, [x1, y1], [x2, y2]) {
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line')
+  const set = (k, v) => line.setAttribute(k, Math.round(v))
+  set('x1', x1)
+  set('y1', 400 - y1)
+  set('x2', x2)
+  set('y2', 400 - y2)
+  line.style.stroke = 'black'
+  line.style.strokeWidth = '2px'
+  svg.appendChild(line)
+  const dot = svg.getElementById('dot')
+  dot.setAttribute('cx', Math.round(x2))
+  dot.setAttribute('cy', Math.round(400 - y2))
+}
+
 /* c8 ignore stop */
 
 export async function run(nest, state) {
@@ -372,19 +400,21 @@ function until_emit({ elem, command, args, body, state }) {
 }
 
 function forward_emit({ elem, command, args, state }) {
-  if (args.length < 1) return trouble(elem, `FORWARD expects an argument, the number of steps to move a "turtle".`)
-  if (!('turtle' in state)) state.turtle = new Turtle(elem)
+  if (args.length < 1)
+    return state.api.trouble(elem, `FORWARD expects an argument, the number of steps to move a "turtle".`)
+  if (!('turtle' in state)) state.turtle = new Turtle(elem, state.api)
   const steps = args[0]
-  const position = state.turtle.forward(+steps)
-  elem.innerHTML = command + ` ⇒ ${position.map(n => (n - 200).toFixed(1)).join(', ')}`
+  const position = state.turtle.forward(+steps, state.api)
+  state.api.status(elem, command, ` ⇒ ${position.map(n => (n - 200).toFixed(1)).join(', ')}`)
 }
 
 function turn_emit({ elem, command, args, state }) {
-  if (args.length < 1) return trouble(elem, `TURN expects an argument, the number of degrees to turn a "turtle".`)
-  if (!('turtle' in state)) state.turtle = new Turtle(elem)
+  if (args.length < 1)
+    return state.api.trouble(elem, `TURN expects an argument, the number of degrees to turn a "turtle".`)
+  if (!('turtle' in state)) state.turtle = new Turtle(elem, state.api)
   const degrees = args[0]
   const direction = state.turtle.turn(+degrees)
-  elem.innerHTML = command + ` ⇒ ${direction}°`
+  state.api.status(elem, command, ` ⇒ ${direction}°`)
 }
 
 function file_emit({ elem, command, args, body, state }) {

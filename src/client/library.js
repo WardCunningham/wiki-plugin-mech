@@ -312,38 +312,18 @@ export class Graph {
 }
 
 export class Turtle {
-  constructor(elem) {
+  constructor(elem, api) {
     const size = elem
-    const div = document.createElement('div')
-    elem.closest('.item').firstElementChild.prepend(div)
-    div.outerHTML = `
-        <div style="border:1px solid black; background-color:#f8f8f8; margin-bottom:16px;">
-          <svg viewBox="0 0 400 400" width=100% height=400>
-            <circle id=dot r=5 cx=200 cy=200 stroke="#ccc"></circle>
-          </svg>
-        </div>`
-    this.svg = elem.closest('.item').getElementsByTagName('svg')[0]
+    this.svg = api.newSVG(elem)
     this.position = [200, 200]
     this.direction = 0
   }
 
-  forward(steps) {
+  forward(steps, api) {
     const theta = (this.direction * 2 * Math.PI) / 360
     const [x1, y1] = this.position
-    const [x2, y2] = [x1 + steps * Math.sin(theta), y1 + steps * Math.cos(theta)]
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line')
-    const set = (k, v) => line.setAttribute(k, Math.round(v))
-    set('x1', x1)
-    set('y1', 400 - y1)
-    set('x2', x2)
-    set('y2', 400 - y2)
-    line.style.stroke = 'black'
-    line.style.strokeWidth = '2px'
-    this.svg.appendChild(line)
-    const dot = this.svg.getElementById('dot')
-    dot.setAttribute('cx', Math.round(x2))
-    dot.setAttribute('cy', Math.round(400 - y2))
-    this.position = [x2, y2]
+    this.position = [x1 + steps * Math.sin(theta), y1 + steps * Math.cos(theta)]
+    api.SVGline(this.svg, [x1, y1], this.position)
     return this.position
   }
 

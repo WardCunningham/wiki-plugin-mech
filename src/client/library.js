@@ -311,28 +311,6 @@ export class Graph {
   }
 }
 
-export class Turtle {
-  constructor(elem, api) {
-    const size = elem
-    this.svg = api.newSVG(elem)
-    this.position = [200, 200]
-    this.direction = 0
-  }
-
-  forward(steps, api) {
-    const theta = (this.direction * 2 * Math.PI) / 360
-    const [x1, y1] = this.position
-    this.position = [x1 + steps * Math.sin(theta), y1 + steps * Math.cos(theta)]
-    api.SVGline(this.svg, [x1, y1], this.position)
-    return this.position
-  }
-
-  turn(degrees) {
-    this.direction += degrees
-    return this.direction
-  }
-}
-
 // adapted from wiki-client/lib/revision.coffee
 
 // This module interprets journal actions in order to update

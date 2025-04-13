@@ -1,7 +1,22 @@
 import { soloListener, apply, requestSourceData, dotify, walks, kwic } from './library.js'
 import { uniq, delay, asSlug } from './mech.js'
 
-/* c8 ignore start */
+export const api = {
+  trouble,
+  inspect,
+  response,
+  button,
+  element,
+  jfetch,
+  status,
+  sourceData,
+  showResult,
+  neighborhood,
+  publishSourceData,
+  newSVG,
+  SVGline,
+}
+
 export function trouble(elem, message) {
   if (elem.innerText.match(/✖︎/)) return
   elem.innerHTML += `<button style="border-width:0;color:red;">✖︎</button>`
@@ -111,8 +126,6 @@ export function SVGline(svg, [x1, y1], [x2, y2]) {
   dot.setAttribute('cx', Math.round(x2))
   dot.setAttribute('cy', Math.round(400 - y2))
 }
-
-/* c8 ignore stop */
 
 export async function run(nest, state) {
   const scope = nest.slice()
@@ -402,7 +415,7 @@ function until_emit({ elem, command, args, body, state }) {
 function forward_emit({ elem, command, args, state }) {
   if (args.length < 1)
     return state.api.trouble(elem, `FORWARD expects an argument, the number of steps to move a "turtle".`)
-  state.turtle ??= {svg: state.api.newSVG(elem), position: [200, 200], direction: 0}
+  state.turtle ??= { svg: state.api.newSVG(elem), position: [200, 200], direction: 0 }
   const steps = args[0]
   const theta = (state.turtle.direction * 2 * Math.PI) / 360
   const [x1, y1] = state.turtle.position
@@ -414,8 +427,8 @@ function forward_emit({ elem, command, args, state }) {
 function turn_emit({ elem, command, args, state }) {
   if (args.length < 1)
     return state.api.trouble(elem, `TURN expects an argument, the number of degrees to turn a "turtle".`)
-  state.turtle ??= {svg: state.api.newSVG(elem), position: [200, 200], direction: 0}
-  const degrees = +(args[0])
+  state.turtle ??= { svg: state.api.newSVG(elem), position: [200, 200], direction: 0 }
+  const degrees = +args[0]
   state.turtle.direction += degrees
   state.api.status(elem, command, ` ⇒ ${state.turtle.direction}°`)
 }

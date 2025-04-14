@@ -1,48 +1,42 @@
 import { describe, it } from 'node:test'
 import expect from 'expect.js'
 import { api } from '../src/client/blocks.js'
-;(function () {
-  const tags = /<(\/?.\w+).*?>/g
+import createThing from 'universal-thing'
 
-  const elem = {
-    get innerText() {
-      return 'block '
-    },
-    get innerHTML() {
-      return 'block '
-    },
-    set innerHTML(html) {
-      this.log.push(html)
-    },
-    get outerHTML() {
-      return 'prefix '
-    },
-    set outerHTML(html) {
-      this.log.push(html)
-    },
-    querySelector(selector) {
-      return elem
-    },
-    addEventListener(topic, handler) {
-      this.log.push(`on ${topic}`)
-      this.handler = handler
-      return elem
-    },
-    log: [],
-    handler: null,
-  }
+const tagged = html => html.replaceAll(/(<\w+) .*?>/g, '$1>')
+const event = {
+  get shiftKey() {
+    return true
+  },
+}
 
-  const event = {
-    get shiftKey() {
-      return true
-    }
-  }
+const show = thing => console.log(thing[createThing.logSymbol])
 
-  describe('api for reporting', () => {
-    it('trouble', async () => {
-      await api.trouble(elem, 'data')
-      await elem.handler.call(event)
-      expect(elem.log.join('|').replaceAll(tags, '')).to.be('block ✖︎|on click|prefix data')
-    })
+describe('api for reporting', () => {
+  it('trouble notice shown', async () => {
+    const elem = createThing(({ type, path, args }) => (type == 'call' && path[0] == 'match' ? null : undefined))
+    await api.trouble(elem, 'data')
+    expect(tagged(elem.innerHTML)).to.be('root.innerHTML <button>✖︎</button>')
   })
-}).call(this)
+  it('trouble notice clicked', async () => {
+    const elem = createThing(({ type, path, args }) => (type == 'call' && path[0] == 'match' ? null : undefined))
+    await api.trouble(elem, 'data')
+    await elem[createThing.logSymbol][8].args[1].call(event)
+    expect(tagged(elem.outerHTML)).to.be('root.outerHTML <span>data</span>')
+  })
+  it('inspect notice shown', async () => {
+    const elem = createThing()
+    await api.inspect(elem, 'data', { debug: true, data: 'your data here' })
+    expect(elem.previousElementSibling.innerHTML).to.be('data ⇒ ')
+  })
+  it('inspect notice clicked', async () => {
+    global.document = createThing()
+    const elem = createThing()
+    await api.inspect(elem, 'data', { debug: true, data: 'your data here' })
+    await elem[createThing.logSymbol][3].args[1].call(event)
+    // show(elem)
+    // show(document)
+    const tap = elem.previousElementSibling.previousElementSibling
+    expect(tagged(tap.innerHTML)).to.be('<div>"your data here"</div>')
+  })
+})

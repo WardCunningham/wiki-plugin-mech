@@ -46,6 +46,7 @@
     "node": ">=0.10"
   },
   "dependencies": {
-    "expect.js": "^0.3.1"
+    "expect.js": "^0.3.1",
+    "universal-thing": "^1.0.0"
   }
 }

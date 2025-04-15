@@ -47,9 +47,37 @@ describe('api for reporting', () => {
     const elem = createThing(returning('contains', false))
     await api.inspect(elem, 'data', { debug: true, data: 'your data here' })
     await onclick(elem).call(event)
-    show(elem)
-    // show(document)
     const tap = elem.previousElementSibling.previousElementSibling
     expect(tagged(tap.innerHTML)).to.be('<div>"your data here"</div>')
+  })
+  it('response shown', async () => {
+    const elem = createThing()
+    await api.response(elem, ' 😀')
+    expect(elem.innerHTML).to.be('root.innerHTML  😀')
+  })
+  it('button clicked', async () => {
+    const elem = createThing(returning('match', null))
+    await api.button(elem, 'doit', event => api.response(elem, 'clicked'))
+    await onclick(elem).call(event)
+    expect(tagged(elem.innerHTML)).to.be('root.innerHTML <button>doit</button>clicked')
+  })
+  it('status shown', async () => {
+    const elem = createThing()
+    await api.status(elem, 'block', ' ⇒ 100 units')
+    expect(elem.innerHTML).to.be('block ⇒ 100 units')
+  })
+})
+describe('api for acquisiton', () => {
+  it('element by id', () => {
+    global.document = createThing()
+    const elem = createThing()
+    api.element('1.2.0')
+    expect(document[logSymbol][1].args[0]).to.be('1.2.0')
+  })
+  it('json from url', async () => {
+    global.window = createThing()
+    const elem = createThing()
+    await api.jfetch('http://fed.wiki/system/sitemap.json')
+    show(window)
   })
 })

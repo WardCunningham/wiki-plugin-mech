@@ -18,7 +18,7 @@ const event = {
   },
 }
 
-const show = thing => console.log(thing[logSymbol])
+const show = (name,thing) => console.log(name,thing[logSymbol])
 
 describe('api for reporting', () => {
   it('trouble notice shown', async () => {
@@ -75,9 +75,20 @@ describe('api for acquisiton', () => {
     expect(document[logSymbol][1].args[0]).to.be('1.2.0')
   })
   it('json from url', async () => {
-    global.window = createThing()
+    global.fetch = createThing()
     const elem = createThing()
     await api.jfetch('http://fed.wiki/system/sitemap.json')
-    show(window)
+    // show(fetch)
+    expect(fetch[logSymbol][0].args[0]).to.be('http://fed.wiki/system/sitemap.json')
+  })
+  it('source data from lineup', async () => {
+    const items = [
+      createThing(returning('markersData',[1,2,3])),
+      createThing(returning('markersData',[4,5,6]))]
+    global.document = createThing(returning('querySelectorAll',items))
+    const elem = createThing()
+    const results = await api.sourceData(elem, 'markers')
+    const sorted = results.map(r => r.result).flat().sort().join(" ")
+    expect(sorted).to.be('1 2 3 4 5 6')
   })
 })

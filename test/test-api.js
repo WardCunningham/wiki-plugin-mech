@@ -5,7 +5,7 @@ import thing from 'universal-thing'
 
 const logSymbol = thing.logSymbol
 const show = (name, thing) => console.log(name, thing[logSymbol])
-const tagged = html => html.replaceAll(/(<\w+) .*?>/g, '$1>')
+const tagged = html => html.replaceAll(/(<\w+) .*?>/g, '$1>').replaceAll(/\n */g, '')
 const has = (thing, type) => thing[logSymbol].filter(log => log.type == type)
 const onclick = thing =>
   thing[logSymbol].find(log => (log.type == 'call') & (log.path[0] == 'addEventListener') && log.args[0] == 'click')
@@ -24,7 +24,7 @@ const event = {
   },
 }
 
-describe('api for reporting', () => {
+describe('api for inline reporting', () => {
   it('trouble notice shown', async () => {
     const elem = thing(returning('match', null))
     await api.trouble(elem, 'data')
@@ -72,7 +72,7 @@ describe('api for reporting', () => {
   })
 })
 
-describe('api for acquisiton', () => {
+describe('api for acquisiton and generation', () => {
   it('element by id', () => {
     global.document = thing()
     const elem = thing()
@@ -133,11 +133,8 @@ describe('api for acquisiton', () => {
     global.wiki = thing(retrieving('neighborhoodObject', sites))
     const page = { title: 'Test', story: [] }
     const result = api.neighborhood()
-    const pages = result
-      .flat()
-      .map(info => info.title)
-      .join(', ')
-    expect(pages).to.be(`Test Page, Hello, Goodbye`)
+    const pages = result.flat().map(info => info.title)
+    expect(pages.join(', ')).to.be(`Test Page, Hello, Goodbye`)
   })
   it('some sitemaps from neighborhod', () => {
     const info = title => ({ title })
@@ -149,10 +146,25 @@ describe('api for acquisiton', () => {
     global.wiki = thing(retrieving('neighborhoodObject', sites))
     const page = { title: 'Test', story: [] }
     const result = api.neighborhood('org')
-    const pages = result
-      .flat()
-      .map(info => info.title)
-      .join(', ')
-    expect(pages).to.be(`Hello, Goodbye`)
+    const pages = result.flat().map(info => info.title)
+    expect(pages.join(', ')).to.be(`Hello, Goodbye`)
+  })
+})
+
+describe('api for svg graphics', () => {
+  it('create inline svg', () => {
+    const div = thing()
+    global.document = thing(returning('createElement', div))
+    const elem = thing()
+    api.newSVG(elem)
+    expect(tagged(div.outerHTML)).to.be('<div><svg><circle></circle></svg></div>')
+  })
+  it('add line to svg', () => {
+    const svg = thing()
+    const line = thing()
+    global.document = thing(returning('createElementNS', line))
+    api.SVGline(svg, [10, 20], [100, 200])
+    const xy = has(line, 'call').map(each => each.args)
+    expect(xy.flat().join(' ')).to.be('x1 10 y1 380 x2 100 y2 200')
   })
 })

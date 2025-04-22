@@ -65,6 +65,14 @@ describe('api for inline reporting', () => {
     await onclick(elem).call(event)
     expect(tagged(elem.innerHTML)).to.be('root.innerHTML <button>doit</button>clicked')
   })
+  it('button has single handler', async () => {
+    const elem = thing(returning('match', null))
+    await api.button(elem, 'doit', event => api.response(elem, 'clicked'))
+    await api.button(elem, 'doit', event => api.response(elem, 'clicked'))
+    expect(tagged(elem.innerHTML)).to.be('root.innerHTML <button>doit</button>')
+    const listeners = has(elem, 'call').filter(call => call.path[0] == 'addEventListener')
+    expect(listeners.length).to.be(1)
+  })
   it('status shown', async () => {
     const elem = thing()
     await api.status(elem, 'block', ' ⇒ 100 units')

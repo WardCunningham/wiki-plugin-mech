@@ -54,8 +54,10 @@ export function response(elem, html) {
 }
 
 export function button(elem, label, handler) {
-  if (!elem.innerHTML.match(/button/)) response(elem, `<button style="border-width:0;">${label}</button>`)
-  elem.querySelector('button').addEventListener('click', handler)
+  if (!elem.innerHTML.match(/button/)) {
+    response(elem, `<button style="border-width:0;">${label}</button>`)
+    elem.querySelector('button').addEventListener('click', handler)
+  }
 }
 
 export function element(key) {

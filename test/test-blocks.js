@@ -76,7 +76,7 @@ const api = {
     await mech.run(nest, state)
   }
 
-  describe('mech plugin blocks', () => {
+  describe('Early Blocks', () => {
     it('simple HELLO', async () => {
       await setup('HELLO')
       expect(api.log.join('|')).to.be('response 😀')
@@ -104,7 +104,8 @@ const api = {
       await setup('CLICK')
       expect(api.log.join('|').replaceAll(tags, '')).to.be('trouble expects indented')
     })
-
+  })
+  describe('Sensor and Report Blocks', () => {
     it('simple REPORT', async () => {
       await setup('REPORT', { temperature: '98.6°F' })
       var result = api.log.join('|').replaceAll(tags, '<$1>')
@@ -136,7 +137,8 @@ const api = {
         'response ⏳|fetch //datalog.json|response ⌛|status |status  ⏳|fetch http://home.c2.com:8023|status  ⌛|response 54.80°F',
       )
     })
-
+  })
+  describe('Source and Preview Blocks', () => {
     it('simple SOURCE', async () => {
       api.files.length = 0
       const marker = { lat: '45.12', lon: '-122.67', label: 'Everywhere' }
@@ -184,6 +186,8 @@ const api = {
       await setup('PREVIEW foobar', { context })
       expect(api.log.join('|').replaceAll(tags, '')).to.be("trouble doesn't name")
     })
+  })
+  describe('Neighborhood Blocks', () => {
     it('simple NEIGHBORS', async () => {
       api.files.length = 0
       const domain = 'fed.wiki'
@@ -304,6 +308,8 @@ const api = {
       await setup('WALK 1 months', { neighborhood })
       expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
     })
+  })
+  describe('Turtle Blocks', () => {
     it('simple FORWARD', async () => {
       await setup('FORWARD 100', {})
       expect(api.log.join('|').replaceAll(tags, '')).to.be('svg|status  ⇒ 0.0, 100.0')

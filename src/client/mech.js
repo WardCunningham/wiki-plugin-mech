@@ -47,3 +47,4 @@ if (typeof window !== 'undefined' && window !== null) {
 }
 
 export { expand, tree, format, run }
+export { emit, bind }

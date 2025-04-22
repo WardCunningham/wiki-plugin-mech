@@ -144,7 +144,6 @@ describe('api for acquisiton and generation', () => {
       'wiki.org': sitemap([info('Hello'), info('Goodbye')]),
     }
     global.wiki = thing(retrieving('neighborhoodObject', sites))
-    const page = { title: 'Test', story: [] }
     const result = api.neighborhood('org')
     const pages = result.flat().map(info => info.title)
     expect(pages.join(', ')).to.be(`Hello, Goodbye`)

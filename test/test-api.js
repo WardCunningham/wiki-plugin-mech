@@ -6,6 +6,7 @@ import thing from 'universal-thing'
 const logSymbol = thing.logSymbol
 const show = (name, thing) => console.log(name, thing[logSymbol])
 const tagged = html => html.replaceAll(/(<\w+) .*?>/g, '$1>')
+const has = (thing, type) => thing[logSymbol].filter(log => log.type == type)
 const onclick = thing =>
   thing[logSymbol].find(log => (log.type == 'call') & (log.path[0] == 'addEventListener') && log.args[0] == 'click')
     .args[1]
@@ -13,6 +14,10 @@ const returning =
   (funct, value) =>
   ({ type, path, args }) =>
     type == 'call' && path[0] == funct ? value : undefined
+const retrieving =
+  (obj, value) =>
+  ({ type, path, args }) =>
+    type == 'get' && path[0] == obj ? value : undefined
 const event = {
   get shiftKey() {
     return false
@@ -86,5 +91,68 @@ describe('api for acquisiton', () => {
     global.document = thing(returning('querySelectorAll', items))
     const sources = await api.sourceData(elem, 'markers')
     expect(sources[0].result).to.be('near')
+  })
+  it('trouble source data from lineup', async () => {
+    const elem = thing(returning('match', null))
+    const items = [].map(data => thing(returning('markersData', data)))
+    global.document = thing(returning('querySelectorAll', items))
+    const sources = await api.sourceData(elem, 'markers')
+    // show('elem', elem)
+    expect(tagged(elem.innerHTML)).to.be(`root.innerHTML <button>✖︎</button>`)
+  })
+  it('publish source aspect data', () => {
+    const elem = thing()
+    const data = thing()
+    api.publishSourceData(elem, 'aspect', data)
+    expect(has(elem, 'call')[1].args[0]).to.be(`aspect-source`)
+    expect(has(elem, 'set')[0].args[0]).to.be(`aspectData`)
+  })
+  it('publish source markers data', () => {
+    const elem = thing()
+    const data = thing()
+    api.publishSourceData(elem, 'markers', data)
+    expect(has(elem, 'call')[1].args[0]).to.be(`markers-source`)
+    expect(has(elem, 'set')[0].args[0]).to.be(`markersData`)
+  })
+  it('show result as ghost page', () => {
+    const elem = thing()
+    global.wiki = thing()
+    global.$ = thing()
+    const page = { title: 'Test', story: [] }
+    api.showResult(elem, page)
+    expect(has(global.wiki, 'call')[0].path[0]).to.be(`newPage`)
+    expect(has(global.wiki, 'call')[1].path[0]).to.be(`showResult`)
+  })
+  it('all sitemaps from neighborhod', () => {
+    const info = title => ({ title })
+    const sitemap = infos => ({ sitemapRequestInflight: false, sitemap: infos })
+    const sites = {
+      'fed.wiki': sitemap([info('Test Page')]),
+      'npl.wiki': sitemap([info('Hello'), info('Goodbye')]),
+    }
+    global.wiki = thing(retrieving('neighborhoodObject', sites))
+    const page = { title: 'Test', story: [] }
+    const result = api.neighborhood()
+    const pages = result
+      .flat()
+      .map(info => info.title)
+      .join(', ')
+    expect(pages).to.be(`Test Page, Hello, Goodbye`)
+  })
+  it('some sitemaps from neighborhod', () => {
+    const info = title => ({ title })
+    const sitemap = infos => ({ sitemapRequestInflight: false, sitemap: infos })
+    const sites = {
+      'fed.wiki': sitemap([info('Test Page')]),
+      'wiki.org': sitemap([info('Hello'), info('Goodbye')]),
+    }
+    global.wiki = thing(retrieving('neighborhoodObject', sites))
+    const page = { title: 'Test', story: [] }
+    const result = api.neighborhood('org')
+    const pages = result
+      .flat()
+      .map(info => info.title)
+      .join(', ')
+    expect(pages).to.be(`Hello, Goodbye`)
   })
 })

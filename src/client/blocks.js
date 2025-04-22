@@ -84,8 +84,8 @@ export function sourceData(elem, topic) {
 
 export function publishSourceData(elem, topic, data) {
   const item = elem.closest('.item')
-  item.classList.add('aspect-source')
-  item.aspectData = () => data
+  item.classList.add(`${topic}-source`)
+  item[`${topic}Data`] = () => data
 }
 
 export function showResult(elem, page) {

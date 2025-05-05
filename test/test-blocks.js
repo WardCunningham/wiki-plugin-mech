@@ -65,7 +65,7 @@ const api = {
       this.handler = null
       return undefined
     }
-    return { stop }
+    return { api: { stop } }
   },
 
   log: [],
@@ -335,18 +335,24 @@ const api = {
   })
   describe('Sequencing Blocks', () => {
     it('simple TICK', async () => {
-      await setup('TICK 3|_HELLO', {})
+      await setup('TICK 2|_HELLO', {})
       expect(api.log.join('|').replaceAll(tags, '')).to.be('response ▶')
     })
-    // it('click TICK', async () => {
-    //   await setup('TICK 3|_HELLO', {})
-    //   expect(api.log.join('|').replaceAll(tags, '')).to.be('response ▶')
-    //   api.log.length = 0
-    //   await api.click(false)
-    //   expect(api.log.join('|').replaceAll(tags,'')).to.be('status  ⇒ 3 remaining|response 😀')
-    //   api.log.length = 0
-    //   await api.click(false)
-    //   expect(api.log.join('|').replaceAll(tags,'')).to.be('whatever')
-    // })
+    it('click TICK', async () => {
+      await setup('TICK 2|_HELLO', {})
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('response ▶')
+      api.log.length = 0
+      await api.click(false)
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 2 remaining')
+      api.log.length = 0
+      await api.click(false)
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 remaining|response 😀')
+      api.log.length = 0
+      await api.click(false)
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 0 remaining|response 😀')
+      api.log.length = 0
+      await api.click(false)
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status |response ▶')
+    })
   })
 }).call(this)

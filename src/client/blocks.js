@@ -1,5 +1,6 @@
 import { soloListener, apply, requestSourceData, dotify, walks, kwic } from './library.js'
 import { uniq, delay, asSlug } from './mech.js'
+import ticker from 'universal-ticker'
 
 export const api = {
   trouble,
@@ -130,11 +131,11 @@ export function SVGline(svg, [x1, y1], [x2, y2]) {
   dot.setAttribute('cy', Math.round(400 - y2))
 }
 
-export function ticker(handler) {
-  const interval = setInterval(handler, 1000)
-  const stop = () => clearInterval(interval)
-  return { stop }
-}
+// export function ticker(handler) {
+//   const interval = setInterval(handler, 1000)
+//   const stop = () => clearInterval(interval)
+//   return { stop }
+// }
 
 export async function run(nest, state) {
   const scope = nest.slice()
@@ -368,37 +369,29 @@ function tick_emit({ elem, command, args, body, state }) {
   if (!count.match(/^[1-9][0-9]?$/)) return state.api.trouble(elem, `TICK expects a count from 1 to 99`)
   let clock = null
   ready()
+
   function ready() {
     state.api.button(elem, '▶', start)
   }
-  function start(event) {
+  function status(ticks) {
+    state.api.status(elem, command, ` ⇒ ${ticks} remaining`)
+  }
+
+  async function start(event) {
     state.debug = event.shiftKey
-    const status = ticks => {
-      // elem.innerHTML = command + ` ⇒ ${ticks} remaining`
-      state.api.status(elem, command, ` ⇒ ${ticks} remaining`)
-    }
-    if (clock) {
-      clock = clock.stop()
-      delete state.tick
-    } else {
-      let working
-      state.tick = +count
-      status(state.tick)
-      working = true
-      run(body, state).then(() => (working = false))
-      clock = state.api.ticker(() => {
-        if (working) return
-        if (state.debug) console.log({ tick: state.tick })
-        if ('tick' in state && --state.tick > 0) {
-          status(state.tick)
-          working = true
-          run(body, state).then(() => (working = false))
-        } else {
-          clock = clock.stop()
-          ready()
-        }
-      })
-    }
+    state.tick = +count
+    status(state.tick)
+    clock = state.api.ticker(async () => {
+      if (state.debug) console.log({ tick: state.tick })
+      if ('tick' in state && --state.tick >= 0) {
+        status(state.tick)
+        await run(body, state)
+      } else {
+        clock = clock.api.stop()
+        state.api.status(elem, command, '')
+        ready()
+      }
+    })
   }
 }
 

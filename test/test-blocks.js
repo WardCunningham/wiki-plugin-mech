@@ -57,8 +57,16 @@ const api = {
     this.log.push('svg')
     return 'an svg object'
   },
-
   SVGline(svg, [x1, y1], [x2, y2]) {},
+
+  ticker(lambda) {
+    this.handler = lambda
+    const stop = () => {
+      this.handler = null
+      return undefined
+    }
+    return { stop }
+  },
 
   log: [],
   files: [],
@@ -324,5 +332,21 @@ const api = {
         'svg|status  ⇒ 0.0, 3.0|status  ⇒ 90°|status  ⇒ 4.0, 3.0|status  ⇒ 233.13°|status  ⇒ 0.0, -0.0',
       )
     })
+  })
+  describe('Sequencing Blocks', () => {
+    it('simple TICK', async () => {
+      await setup('TICK 3|_HELLO', {})
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('response ▶')
+    })
+    // it('click TICK', async () => {
+    //   await setup('TICK 3|_HELLO', {})
+    //   expect(api.log.join('|').replaceAll(tags, '')).to.be('response ▶')
+    //   api.log.length = 0
+    //   await api.click(false)
+    //   expect(api.log.join('|').replaceAll(tags,'')).to.be('status  ⇒ 3 remaining|response 😀')
+    //   api.log.length = 0
+    //   await api.click(false)
+    //   expect(api.log.join('|').replaceAll(tags,'')).to.be('whatever')
+    // })
   })
 }).call(this)

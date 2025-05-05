@@ -15,6 +15,7 @@ export const api = {
   publishSourceData,
   newSVG,
   SVGline,
+  ticker,
 }
 
 export function trouble(elem, message) {
@@ -127,6 +128,12 @@ export function SVGline(svg, [x1, y1], [x2, y2]) {
   const dot = svg.getElementById('dot')
   dot.setAttribute('cx', Math.round(x2))
   dot.setAttribute('cy', Math.round(400 - y2))
+}
+
+export function ticker(handler) {
+  const interval = setInterval(handler, 1000)
+  const stop = () => clearInterval(interval)
+  return { stop }
 }
 
 export async function run(nest, state) {
@@ -355,23 +362,23 @@ function walk_emit({ elem, command, args, state }) {
 }
 
 function tick_emit({ elem, command, args, body, state }) {
-  if (elem.innerHTML.match(/button/)) return
-  if (!body?.length) return trouble(elem, `TICK expects indented blocks to follow.`)
+  console.log({ command, args, body, state })
+  if (!body?.length) return state.api.trouble(elem, `TICK expects indented blocks to follow.`)
   const count = args[0] || '1'
-  if (!count.match(/^[1-9][0-9]?$/)) return trouble(elem, `TICK expects a count from 1 to 99`)
+  if (!count.match(/^[1-9][0-9]?$/)) return state.api.trouble(elem, `TICK expects a count from 1 to 99`)
   let clock = null
   ready()
   function ready() {
-    elem.innerHTML = command + '<button style="border-width:0;">▶</button>'
-    elem.querySelector('button').addEventListener('click', start)
+    state.api.button(elem, '▶', start)
   }
   function start(event) {
     state.debug = event.shiftKey
     const status = ticks => {
-      elem.innerHTML = command + ` ⇒ ${ticks} remaining`
+      // elem.innerHTML = command + ` ⇒ ${ticks} remaining`
+      state.api.status(elem, command, ` ⇒ ${ticks} remaining`)
     }
     if (clock) {
-      clock = clearInterval(clock)
+      clock = clock.stop()
       delete state.tick
     } else {
       let working
@@ -379,7 +386,7 @@ function tick_emit({ elem, command, args, body, state }) {
       status(state.tick)
       working = true
       run(body, state).then(() => (working = false))
-      clock = setInterval(() => {
+      clock = state.api.ticker(() => {
         if (working) return
         if (state.debug) console.log({ tick: state.tick })
         if ('tick' in state && --state.tick > 0) {
@@ -387,10 +394,10 @@ function tick_emit({ elem, command, args, body, state }) {
           working = true
           run(body, state).then(() => (working = false))
         } else {
-          clock = clearInterval(clock)
+          clock = clock.stop()
           ready()
         }
-      }, 1000)
+      })
     }
   }
 }

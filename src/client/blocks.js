@@ -301,7 +301,7 @@ async function neighbors_emit({ elem, command, args, body, state }) {
       continue
     }
     const todos = have.filter(sitemap => sitemap.find(info => info.title == probe.command))
-    state.api.response(belem(probe), ` ⇒ ${todos.length} sites`)
+    state.api.status(belem(probe), probe.command, `⇒ ${todos.length} sites`)
     for (const todo of todos) {
       const url = `//${todo[0].domain}/${asSlug(probe.command)}.json`
       const page = await state.api.jfetch(url)
@@ -320,7 +320,7 @@ async function neighbors_emit({ elem, command, args, body, state }) {
     }
   }
   state.neighborhood = have.flat().sort((a, b) => b.date - a.date)
-  state.api.response(elem, ` ⇒ ${state.neighborhood.length} pages, ${have.length} sites`)
+  state.api.status(elem, command, `⇒ ${state.neighborhood.length} pages, ${have.length} sites`)
 }
 
 function walk_emit({ elem, command, args, state }) {
@@ -367,8 +367,12 @@ function tick_emit({ elem, command, args, body, state }) {
   if (!body?.length) return state.api.trouble(elem, `TICK expects indented blocks to follow.`)
   const count = args[0] || '1'
   if (!count.match(/^[1-9][0-9]?$/)) return state.api.trouble(elem, `TICK expects a count from 1 to 99`)
-  let clock = null
-  ready()
+  let clock, outertick
+  if (state.tick != null) {
+    outertick = state.tick
+    start({ shiftKey: state.debug })
+    return clock
+  } else ready()
 
   function ready() {
     state.api.button(elem, '▶', start)
@@ -377,17 +381,18 @@ function tick_emit({ elem, command, args, body, state }) {
     state.api.status(elem, command, ` ⇒ ${ticks} remaining`)
   }
 
-  async function start(event) {
+  function start(event) {
     state.debug = event.shiftKey
     state.tick = +count
     status(state.tick)
     clock = state.api.ticker(async () => {
-      if (state.debug) console.log({ tick: state.tick })
+      if (state.debug) console.log({ tick: state.tick, count })
       if ('tick' in state && --state.tick >= 0) {
         status(state.tick)
         await run(body, state)
       } else {
         clock = clock.api.stop()
+        state.tick = outertick
         state.api.status(elem, command, '')
         ready()
       }

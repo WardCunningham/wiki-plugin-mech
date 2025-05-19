@@ -203,7 +203,7 @@ const api = {
       const site = { sitemap: [info('Hello World'), info('New World Order')] }
       api.files.push([[domain, site]])
       await setup('NEIGHBORS', {})
-      expect(api.log.join('|').replaceAll(tags, '')).to.be('neighbors|response ⇒ 2 pages, 1 sites')
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('neighbors|status ⇒ 2 pages, 1 sites')
     })
     it('augmented NEIGHBORS', async () => {
       api.files.length = 0
@@ -214,7 +214,7 @@ const api = {
       api.files.push({ story: [{ type: 'frame', survey: [] }] })
       await setup('NEIGHBORS|_Test Survey', {})
       expect(api.log.join('|').replaceAll(tags, '')).to.be(
-        'neighbors|response ⇒ 1 sites|fetch //fed.wiki/test-survey.json|response ⇒ 2 pages, 1 sites',
+        'neighbors|status ⇒ 1 sites|fetch //fed.wiki/test-survey.json|status ⇒ 2 pages, 1 sites',
       )
     })
     it('troubles NEIGHBORS', async () => {
@@ -224,9 +224,7 @@ const api = {
       const site = { sitemap: [info('Hello World'), info('Test Survey')] }
       api.files.push([[domain, site]])
       await setup('NEIGHBORS|_Test Trouble', {})
-      expect(api.log.join('|').replaceAll(tags, '')).to.be(
-        'neighbors|trouble expects a Site|response ⇒ 2 pages, 1 sites',
-      )
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('neighbors|trouble expects a Site|status ⇒ 2 pages, 1 sites')
     })
     it('simple WALK', async () => {
       const neighborhood = []

@@ -14,10 +14,11 @@ function startServer(params) {
   var app = params.app,
     argv = params.argv
 
-  return app.get('/plugin/mech/run/:slug([a-z-]+)/:itemId', cors, (req, res, next) => {
+  return app.get('/plugin/mech/run/:slug/:itemId', cors, (req, res, next) => {
     console.log(req.params)
     try {
       const slug = req.params.slug
+      if(!slug.match(/^[a-z-]+$/)) return next()
       const itemId = req.params.itemId
       const mech = JSON.parse(atob(req.query.mech || 'W10='))
       const share = JSON.parse(atob(req.query.state || 'W10='))

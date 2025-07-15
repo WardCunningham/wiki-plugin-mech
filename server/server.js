@@ -18,7 +18,7 @@ function startServer(params) {
     console.log(req.params)
     try {
       const slug = req.params.slug
-      if(!slug.match(/^[a-z-]+$/)) return next()
+      if (!slug.match(/^[a-z-]+$/)) return next()
       const itemId = req.params.itemId
       const mech = JSON.parse(atob(req.query.mech || 'W10='))
       const share = JSON.parse(atob(req.query.state || 'W10='))

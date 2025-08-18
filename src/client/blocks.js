@@ -783,6 +783,31 @@ async function solo_emit({ elem, command, state }) {
   }
 }
 
+function popup_emit({ elem, args, state }) {
+  const html = []
+  switch (args[0]) {
+  case 'state':
+    for (const key in state) {
+      html.push(
+        `<details>
+          <summary>${key}</summary>
+          <pre>${JSON.stringify(state[key],null,2)}</pre>
+        </details>`)}
+    break
+  case 'images':
+    if(!state.commons) return trouble(elem, `POPUP images expects "commons" state, like from "GET" "COMMONS"`)
+    const where = args[1] == 'all' ? state.commons.all : state.commons.here
+    for (const item of where.items) {
+      html.push(`<span><img height=200 src=/assets/plugins/image/${item}></span>`)}
+    break
+  default:
+    return trouble(elem, `POPUP doesn't know "${args[0]}".`)
+  }
+  wiki.dialog(elem.innerText,html.join("\n"))
+}
+
+
+
 // C A T A L O G
 
 export const blocks = {
@@ -812,4 +837,5 @@ export const blocks = {
   LISTEN: { emit: listen_emit },
   MESSAGE: { emit: message_emit },
   SOLO: { emit: solo_emit },
+  POPUP: { emit: popup_emit },
 }

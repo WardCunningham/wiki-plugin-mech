@@ -114,6 +114,8 @@ export function walks(count, way = 'steps', neighborhood, scope = {}) {
       return references()
     case 'lineup':
       return lineup()
+    case 'topics':
+      return topics(count)
   }
 
   function steps(count = 5) {
@@ -245,6 +247,134 @@ export function walks(count, way = 'steps', neighborhood, scope = {}) {
     }
     console.log({ aspects })
     return aspects
+  }
+
+  // adapted from aspects-of-recent-changes/roster-temporal-topics.html
+  function topics(count=10) {
+    const aspects = []
+    const days = 7
+    const interval = days * 24 * 60 * 60 * 1000
+    const msec = n => Date.now() - n * interval
+    let week = 0
+    while(aspects.length < count && week < count) {
+      const stop = msec(week++)
+      const start = msec(week)
+      const nodes = neighborhood
+        .filter(info => info.date > start && info.date <= stop)
+        .filter(info => !!info.links)
+        .filter(info => !info.title.endsWith(' Survey'))
+      if (nodes.length) {
+        const graph = linked(nodes)
+        const name = new Date(stop).toLocaleDateString()
+        // aspects.push({name,graph})
+        aspects.push(...partitions({name,graph}, start, stop))
+      }
+    }
+    return aspects
+
+    function linked(infos) {
+      const graph = new Graph()
+      const node = slug => {
+        // const type = slug.includes('-and-') ? 'Prompt' : 'Page'
+        const type = ''
+        const info = neighborhood.find(info => info.slug==slug)
+        const twins = neighborhood.filter(info => info.slug==slug).length
+        const title = info.title
+        const site = info.domain
+        const date = info.date
+        const name = title.replaceAll(' ',"\n")
+        const nid = graph.nodes.findIndex(node => node.type==type && node.props.name==name)
+        const result = (nid>=0) ? nid : graph.addNode(type,{name,site,date})
+        if(twins>1) graph.nodes[result].props.twins = twins
+        return result
+      }
+      for (const info of infos) {
+        const nid = node(info.slug)
+        for (const name of newest(Object.keys(info.links))) {
+          graph.addRel('',nid,node(name))
+        }
+      }
+      return graph
+    }
+
+    function newest(slugs) {
+      const recent = slug => neighborhood
+        .filter(info => info.slug == slug)
+      return slugs
+        .map(slug => [slug,recent(slug)])
+        .filter(pair => pair[1].length)
+        .map(pair => [pair[0],pair[1].sort((a,b) => b.date - a.date)[0]])
+        .sort((a,b) => b[1].date - a[1].date)
+        .map(pair => pair[0])
+        .slice(0,3)
+    }
+
+    function partitions(aspect,from,until) {
+      const input = aspect.graph
+      const output = [] // graphs
+      let doing = {} // nid => new nid
+      // const checkpoint = () => {
+      //   window.progress.innerText = output
+      //     .map(graph => `${print(graph.nodes)}\n\n${print(graph.rels)}`)
+      //     .join("\n\n")
+      // }
+      const nodes = input.nodes
+      const rels = input.rels
+      const todo = [...Array(nodes.length).keys()]
+        .map(n => [n,Math.random()])
+        .sort((a,b)=>a[1]-b[1])
+        .map(v=>v[0])
+
+      const copy = nid => {
+        if(nid in doing) {
+          // console.log('copied before', nid, 'doing', doing)
+          return}
+        // console.log('copy start', nid, 'doing', doing)
+        todo.splice(todo.indexOf(nid),1)
+        const node = nodes[nid]
+        doing[nid] = output[0].addNode(node.type,node.props)
+        for (const rid of node.out) copy(rels[rid].to)
+        for (const rid of node.in) copy(rels[rid].from)
+        // console.log('linking',nid,'to',node.out.map(rid => rels[rid].to))
+        for (const rid of node.out) output[0].addRel('',doing[nid],doing[rels[rid].to],{})
+        // checkpoint()
+      }
+
+      // console.log('order todo',todo)
+      while(todo.length) {
+        const nid = todo.shift()
+      // for (let nid of todo) {
+        if (nid in doing) {
+          // console.log('did',nid,'already')
+          continue
+        }
+        const node = nodes[nid]
+        const title = node.props.name.replaceAll("\n"," ")
+        if (node.in.length + node.out.length) {
+          // console.log('doing',nid,title)
+          output.unshift(new Graph())
+          doing = {}
+          copy(nid)     
+        }
+        // else
+          // console.log('skipping',nid,title)
+      }
+
+      const when = node => node.props.date || 0
+      const topic = graph => {
+        const node = graph.nodes.slice(0)
+          .sort((a,b) => when(b)-when(a))
+          .filter(a => when(a)>=from && when(a)<=until)
+          [0]
+        console.log({node,nodes:graph.nodes,name:aspect.name})
+        if(!node) return aspect.name
+        const words = node.props.name.split(/\s+/)
+        return words.slice(0,3).join(' ')
+      }
+
+      return output.reverse()
+        .map((graph,i) => ({name:topic(graph),graph}))
+    }
   }
 }
 

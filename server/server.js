@@ -103,15 +103,16 @@ async function commons_emit({ elem, args, state }) {
   const readdir = dir => new Promise((res, rej) => fs.readdir(dir, (e, v) => (e ? rej(e) : res(v))))
   const stat = file => new Promise((res, rej) => fs.stat(file, (e, v) => (e ? rej(e) : res(v))))
   const tally = async dir => {
-    const count = { files: 0, bytes: 0 }
+    const count = { files: 0, bytes: 0, items: [] }
     const items = await readdir(dir)
     for (const item of items) {
       const itemPath = path.join(dir, item)
       const stats = await stat(itemPath)
       if (state.debug) console.log({ itemPath, stats })
-      if (stats.isFile()) {
+      if (stats.isFile() && !item.startsWith('.')) {
         count.files++
         count.bytes += stats.size
+        count.items.push(item)
       }
     }
     return count
@@ -119,7 +120,8 @@ async function commons_emit({ elem, args, state }) {
   const all = await tally(state.context.argv.commons)
   const here = await tally(path.join(state.context.argv.data, 'assets', 'plugins', 'image'))
   state.commons = { all, here }
-  status(elem, `${(all.bytes / 1000000).toFixed(3)} mb in ${all.files} files`)
+  const mb = count => (count.bytes / 1000000).toFixed(1)
+  status(elem, `${mb(here)} / ${mb(all)} mb in ${here.files} / ${all.files} files`)
 }
 
 async function delta_emit({ elem, args, state }) {

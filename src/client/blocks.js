@@ -254,9 +254,9 @@ function preview_emit({ elem, command, args, state }) {
         if (!('aspect' in state))
           return state.api.trouble(elem, `"graph" preview expects "aspect" state, like from "SOURCE aspect".`)
         state.api.inspect(elem, 'aspect', state)
-        for (const { div, result } of state.aspect) {
+        for (const { result } of state.aspect) {
           for (const { name, graph } of result) {
-            if (state.debug) console.log({ div, result, name, graph })
+            if (state.debug) console.log({ name, graph })
             story.push({ type: 'paragraph', text: name })
             story.push({ type: 'graphviz', text: dotify(graph) })
           }
@@ -327,8 +327,8 @@ function walk_emit({ elem, command, args, state }) {
   if (!('neighborhood' in state))
     return state.api.trouble(elem, `WALK expects state.neighborhood, like from NEIGHBORS.`)
   state.api.inspect(elem, 'neighborhood', state)
-  const [, count, way] = command.match(/\b(\d+)? *(steps|days|weeks|months|hubs|lineup|references)\b/) || []
-  if (!way && command != 'WALK') return tate.api.trouble(elem, `WALK can't understand rest of this block.`)
+  const [, count, way] = command.match(/\b(\d+)? *(steps|days|weeks|months|hubs|lineup|references|topics)\b/) || []
+  if (!way && command != 'WALK') return state.api.trouble(elem, `WALK can't understand rest of this block.`)
   const scope = {
     lineup() {
       const items = [...document.querySelectorAll('.page')]
@@ -358,7 +358,7 @@ function walk_emit({ elem, command, args, state }) {
     // item.classList.add('aspect-source')
     // item.aspectData = () => state.aspect.map(obj => obj.result).flat()
     state.api.publishSourceData(elem, 'aspect', state.aspect.map(obj => obj.result).flat())
-    if (state.debug) console.log({ command, state: state.aspect, item: item.aspectData() })
+    if (state.debug) console.log({ command, state: state.aspect })
   }
 }
 
@@ -783,6 +783,31 @@ async function solo_emit({ elem, command, state }) {
   }
 }
 
+function popup_emit({ elem, args, state }) {
+  const html = []
+  switch (args[0]) {
+  case 'state':
+    for (const key in state) {
+      html.push(
+        `<details>
+          <summary>${key}</summary>
+          <pre>${JSON.stringify(state[key],null,2)}</pre>
+        </details>`)}
+    break
+  case 'images':
+    if(!state.commons) return trouble(elem, `POPUP images expects "commons" state, like from "GET" "COMMONS"`)
+    const where = args[1] == 'all' ? state.commons.all : state.commons.here
+    for (const item of where.items) {
+      html.push(`<span><img height=200 src=/assets/plugins/image/${item}></span>`)}
+    break
+  default:
+    return trouble(elem, `POPUP doesn't know "${args[0]}".`)
+  }
+  wiki.dialog(elem.innerText,html.join("\n"))
+}
+
+
+
 // C A T A L O G
 
 export const blocks = {
@@ -812,4 +837,5 @@ export const blocks = {
   LISTEN: { emit: listen_emit },
   MESSAGE: { emit: message_emit },
   SOLO: { emit: solo_emit },
+  POPUP: { emit: popup_emit },
 }

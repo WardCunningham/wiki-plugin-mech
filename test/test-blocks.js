@@ -89,6 +89,10 @@ const api = {
       await setup('HELLO')
       expect(api.log.join('|')).to.be('response 😀')
     })
+    it('simple HELLO world', async () => {
+      await setup('HELLO world')
+      expect(api.log.join('|')).to.be('response 🌎')
+    })
     it('trouble GOODBYE', async () => {
       await setup('GOODBYE')
       expect(api.log.join('|')).to.be("trouble doesn't name")
@@ -181,6 +185,12 @@ const api = {
       const context = { title: 'Testing Sensor Mech', itemId: '08OQWEIR' }
       await setup('PREVIEW items', { context, items })
       expect(api.log.join('|').replaceAll(tags, '')).to.be('show Mech Preview')
+    })
+    it('ticking PREVIEW items', async () => {
+      const items = [{ type: 'map', text: '45.12, -122.67 Everywhere' }]
+      const context = { title: 'Testing Sensor Mech', itemId: '08OQWEIR' }
+      await setup('PREVIEW items', { context, items, tick: 15 })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('show Mech Preview 15')
     })
     it('simple PREVIEW page', async () => {
       const story = [{ type: 'map', text: '45.12, -122.67 Everywhere' }]

@@ -324,6 +324,48 @@ const api = {
       await setup('WALK 1 months', { neighborhood })
       expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
     })
+    it('test WALK 1 topics', async () => {
+      const domain = 'fed.wiki'
+      const info = (title, link) => ({
+        title,
+        slug: mech.asSlug(title),
+        domain,
+        date: Date.now() - 10000,
+        synopsis: `All about ${title}.`,
+        links: Object.fromEntries([[link, '02384089']]),
+      })
+      const neighborhood = [info('Ying', 'yang'), info('Yang', 'ying'), info('Ding', 'yang')]
+      await setup('WALK 1 topics', { neighborhood })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
+    })
+    // it('test WALK references', async () => {
+    //   const domain = 'fed.wiki'
+    //   const info = (title, link) => ({
+    //     title,
+    //     slug: mech.asSlug(title),
+    //     domain,
+    //     date: Date.now() - 10000,
+    //     synopsis: `All about ${title}.`,
+    //     links: Object.fromEntries([[link, '02384089']]),
+    //   })
+    //   const neighborhood = [info('Ying', 'yang'), info('Yang', 'ying'), info('Ding', 'yang')]
+    //   await setup('WALK references', { neighborhood })
+    //   expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
+    // })
+    // it('test WALK lineup', async () => {
+    //   const domain = 'fed.wiki'
+    //   const info = (title, link) => ({
+    //     title,
+    //     slug: mech.asSlug(title),
+    //     domain,
+    //     date: Date.now() - 10000,
+    //     synopsis: `All about ${title}.`,
+    //     links: Object.fromEntries([[link, '02384089']]),
+    //   })
+    //   const neighborhood = [info('Ying', 'yang'), info('Yang', 'ying'), info('Ding', 'yang')]
+    //   await setup('WALK lineup', { neighborhood })
+    //   expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
+    // })
   })
   describe('Turtle Blocks', () => {
     it('simple FORWARD', async () => {

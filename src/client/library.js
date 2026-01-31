@@ -222,14 +222,12 @@ export function walks(count, way = 'steps', neighborhood, scope = {}) {
 
   function lineup() {
     const aspects = []
-    const lineup = scope.lineup()
-    console.log({ lineup })
-    for (const div of lineup) {
-      const pageObject = wiki.lineup.atKey(div.dataset.key)
+    const pageObjects = scope.lineup()
+    console.log('library lineup', {scope,pageObjects})
+    for (const pageObject of pageObjects) {
       const slug = pageObject.getSlug()
       const site = pageObject.getRemoteSite(location.host)
       const info = find(slug, site)
-      console.log({ div, pageObject, site, slug, info })
       aspects.push({ name: pageObject.getTitle(), graph: blanket(info) })
     }
     return aspects
@@ -238,14 +236,12 @@ export function walks(count, way = 'steps', neighborhood, scope = {}) {
   function references() {
     const aspects = []
     const items = scope.references()
-    console.log({ items })
+    console.log('library references', { items })
     for (const item of items) {
       const { title, site, slug } = item
       const info = find(slug, site)
-      console.log({ site, slug, info })
       aspects.push({ name: title, graph: blanket(info) })
     }
-    console.log({ aspects })
     return aspects
   }
 

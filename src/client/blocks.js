@@ -330,16 +330,18 @@ function walk_emit({ elem, command, args, state }) {
   const [, count, way] = command.match(/\b(\d+)? *(steps|days|weeks|months|hubs|lineup|references|topics)\b/) || []
   if (!way && command != 'WALK') return state.api.trouble(elem, `WALK can't understand rest of this block.`)
   const scope = {
-    lineup() {
+    lineup() { // [pageObjects]
       const items = [...document.querySelectorAll('.page')]
       const index = items.indexOf(elem.closest('.page'))
-      return items.slice(0, index)
+      console.log('walk lineup', {items, index})
+      const pages = items.slice(0, index)
+      return pages.map(div => wiki.lineup.atKey(div.dataset.key))
     },
     references() {
       const div = elem.closest('.page')
       const pageObject = wiki.lineup.atKey(div.dataset.key)
       const story = pageObject.getRawPage().story
-      console.log({ div, pageObject, story })
+      console.log('walk references', { div, pageObject, story })
       return story.filter(item => item.type == 'reference')
     },
   }

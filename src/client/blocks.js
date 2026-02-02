@@ -17,6 +17,8 @@ export const api = {
   newSVG,
   SVGline,
   ticker,
+  lineupAtKey,
+  thisLineupKey,
 }
 
 export function trouble(elem, message) {
@@ -136,6 +138,14 @@ export function SVGline(svg, [x1, y1], [x2, y2]) {
 //   const stop = () => clearInterval(interval)
 //   return { stop }
 // }
+
+export function lineupAtKey(key) {
+  return wiki.lineup.atKey(key)
+}
+
+export function thisLineupKey(elem) {
+  return elem.closest('.page').dataset.key
+}
 
 export async function run(nest, state) {
   const scope = nest.slice()
@@ -330,18 +340,19 @@ function walk_emit({ elem, command, args, state }) {
   const [, count, way] = command.match(/\b(\d+)? *(steps|days|weeks|months|hubs|lineup|references|topics)\b/) || []
   if (!way && command != 'WALK') return state.api.trouble(elem, `WALK can't understand rest of this block.`)
   const scope = {
-    lineup() { // [pageObjects]
+    lineup() {
+      // [pageObjects]
       const items = [...document.querySelectorAll('.page')]
       const index = items.indexOf(elem.closest('.page'))
-      console.log('walk lineup', {items, index})
+      console.log('walk lineup', { items, index })
       const pages = items.slice(0, index)
       return pages.map(div => wiki.lineup.atKey(div.dataset.key))
     },
     references() {
-      const div = elem.closest('.page')
-      const pageObject = wiki.lineup.atKey(div.dataset.key)
+      const key = state.api.thisLineupKey(elem)
+      const pageObject = state.api.lineupAtKey(key)
       const story = pageObject.getRawPage().story
-      console.log('walk references', { div, pageObject, story })
+      console.log('walk references', { key, pageObject, story })
       return story.filter(item => item.type == 'reference')
     },
   }
@@ -788,27 +799,28 @@ async function solo_emit({ elem, command, state }) {
 function popup_emit({ elem, args, state }) {
   const html = []
   switch (args[0]) {
-  case 'state':
-    for (const key in state) {
-      html.push(
-        `<details>
+    case 'state':
+      for (const key in state) {
+        html.push(
+          `<details>
           <summary>${key}</summary>
-          <pre>${JSON.stringify(state[key],null,2)}</pre>
-        </details>`)}
-    break
-  case 'images':
-    if(!state.commons) return trouble(elem, `POPUP images expects "commons" state, like from "GET" "COMMONS"`)
-    const where = args[1] == 'all' ? state.commons.all : state.commons.here
-    for (const item of where.items) {
-      html.push(`<span><img height=200 src=/assets/plugins/image/${item}></span>`)}
-    break
-  default:
-    return trouble(elem, `POPUP doesn't know "${args[0]}".`)
+          <pre>${JSON.stringify(state[key], null, 2)}</pre>
+        </details>`,
+        )
+      }
+      break
+    case 'images':
+      if (!state.commons) return trouble(elem, `POPUP images expects "commons" state, like from "GET" "COMMONS"`)
+      const where = args[1] == 'all' ? state.commons.all : state.commons.here
+      for (const item of where.items) {
+        html.push(`<span><img height=200 src=/assets/plugins/image/${item}></span>`)
+      }
+      break
+    default:
+      return trouble(elem, `POPUP doesn't know "${args[0]}".`)
   }
-  wiki.dialog(elem.innerText,html.join("\n"))
+  wiki.dialog(elem.innerText, html.join('\n'))
 }
-
-
 
 // C A T A L O G
 

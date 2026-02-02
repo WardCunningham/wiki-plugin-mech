@@ -68,9 +68,18 @@ const api = {
     return { api: { stop } }
   },
 
+  thisLineupKey(elem) {
+    return this.lineup.slice(-1)[0].key
+  },
+
+  lineupAtKey(key) {
+    return this.lineup.find(panel => panel.key == key).page
+  },
+
   log: [],
   files: [],
   handler: null,
+  lineup: [],
 }
 
 ;(function () {
@@ -338,20 +347,31 @@ const api = {
       await setup('WALK 1 topics', { neighborhood })
       expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
     })
-    // it('test WALK references', async () => {
-    //   const domain = 'fed.wiki'
-    //   const info = (title, link) => ({
-    //     title,
-    //     slug: mech.asSlug(title),
-    //     domain,
-    //     date: Date.now() - 10000,
-    //     synopsis: `All about ${title}.`,
-    //     links: Object.fromEntries([[link, '02384089']]),
-    //   })
-    //   const neighborhood = [info('Ying', 'yang'), info('Yang', 'ying'), info('Ding', 'yang')]
-    //   await setup('WALK references', { neighborhood })
-    //   expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
-    // })
+    it('test WALK references', async () => {
+      const domain = 'fed.wiki'
+      const info = (title, link) => ({
+        title,
+        slug: mech.asSlug(title),
+        domain,
+        date: Date.now() - 10000,
+        synopsis: `All about ${title}.`,
+        links: Object.fromEntries([[link, '02384089']]),
+      })
+      const panel = (title, story = []) => ({
+        key: `Key${title}`,
+        page: {
+          getRawPage() {
+            return { title, story, site: domain, slug: mech.asSlug(title) }
+          },
+        },
+      })
+      const neighborhood = [info('Ying', 'yang'), info('Yang', 'ying'), info('Ding', 'yang')]
+      api.lineup.length = 0
+      api.lineup.push(panel('Ying'))
+      api.lineup.push(panel('Yang', [{ type: 'reference', site: domain, slug: 'ding' }]))
+      await setup('WALK references', { neighborhood })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
+    })
     // it('test WALK lineup', async () => {
     //   const domain = 'fed.wiki'
     //   const info = (title, link) => ({

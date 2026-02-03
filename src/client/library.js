@@ -226,7 +226,7 @@ export function walks(count, way = 'steps', neighborhood, scope = {}) {
     console.log('library lineup', { scope, pageObjects })
     for (const pageObject of pageObjects) {
       const slug = pageObject.getSlug()
-      const site = pageObject.getRemoteSite(location.host)
+      const site = pageObject.getRemoteSite(scope.host())
       const info = find(slug, site)
       aspects.push({ name: pageObject.getTitle(), graph: blanket(info) })
     }

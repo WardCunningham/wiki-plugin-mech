@@ -19,6 +19,8 @@ export const api = {
   ticker,
   lineupAtKey,
   thisLineupKey,
+  lineupPages,
+  host,
 }
 
 export function trouble(elem, message) {
@@ -145,6 +147,17 @@ export function lineupAtKey(key) {
 
 export function thisLineupKey(elem) {
   return elem.closest('.page').dataset.key
+}
+
+export function lineupPages(elem) {
+  const items = [...document.querySelectorAll('.page')]
+  const index = items.indexOf(elem.closest('.page'))
+  const pages = items.slice(0, index)
+  return pages.map(div => lineupAtKey(div.dataset.key))
+}
+
+export function host() {
+  location.host
 }
 
 export async function run(nest, state) {
@@ -340,13 +353,11 @@ function walk_emit({ elem, command, args, state }) {
   const [, count, way] = command.match(/\b(\d+)? *(steps|days|weeks|months|hubs|lineup|references|topics)\b/) || []
   if (!way && command != 'WALK') return state.api.trouble(elem, `WALK can't understand rest of this block.`)
   const scope = {
+    host() {
+      return state.api.host()
+    },
     lineup() {
-      // [pageObjects]
-      const items = [...document.querySelectorAll('.page')]
-      const index = items.indexOf(elem.closest('.page'))
-      console.log('walk lineup', { items, index })
-      const pages = items.slice(0, index)
-      return pages.map(div => wiki.lineup.atKey(div.dataset.key))
+      return state.api.lineupPages(elem)
     },
     references() {
       const key = state.api.thisLineupKey(elem)

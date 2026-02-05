@@ -396,4 +396,25 @@ const api = {
       expect(api.log.join('|').replaceAll(tags, '')).to.be('status |response ▶')
     })
   })
+  describe('Freeze Blocks', () => {
+    const domain = 'fed.wiki'
+    const panel = (title, story = []) => ({
+      key: `Key${title}`,
+      page: {
+        getRawPage() {
+          return { title, story, site: domain, slug: mech.asSlug(title) }
+        },
+        getRemoteSite(host) {
+          return host
+        },
+      },
+    })
+    it('LINEUP', async () => {
+      api.lineup.length = 0
+      api.lineup.push(panel('Ying'))
+      api.lineup.push(panel('Yang', [{ type: 'reference', site: domain, slug: 'ding' }]))
+      await setup('LINEUP', {})
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 pages')
+    })
+  })
 }).call(this)

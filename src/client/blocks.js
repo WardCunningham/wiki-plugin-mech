@@ -708,16 +708,15 @@ function roster_emit({ elem, command, state }) {
 }
 
 function lineup_emit({ elem, command, state }) {
-  const items = [...document.querySelectorAll('.page')].map(div => {
-    const $page = $(div)
-    const page = $page.data('data')
-    const site = $page.data('site') || location.host
-    const slug = $page.attr('id').split('_')[0]
+  const items = state.api.lineupPages(elem).map(pageObject => {
+    const page = pageObject.getRawPage()
+    const site = pageObject.getRemoteSite(state.api.host())
     const title = page.title || 'Empty'
+    const slug = asSlug(title)
     const text = page.story[0]?.text || 'empty'
     return { type: 'reference', site, slug, title, text }
   })
-  elem.innerHTML = command + ` ⇒ ${items.length} pages`
+  state.api.status(elem, command, ` ⇒ ${items.length} pages`)
   state.items = items
 }
 

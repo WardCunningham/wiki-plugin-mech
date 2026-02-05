@@ -416,5 +416,17 @@ const api = {
       await setup('LINEUP', {})
       expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 pages')
     })
+    it('ROSTER', async () => {
+      const info = (title, domain) => ({
+        title,
+        slug: mech.asSlug(title),
+        domain,
+        date: Date.now() - 10000,
+        synopsis: `All about ${title}.`,
+      })
+      const neighborhood = [info('Ying', 'fed.wiki'), info('Ding', 'fed.wiki'), info('Yang', 'dojo.fed.wiki')]
+      await setup('ROSTER', { neighborhood })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 2 sites')
+    })
   })
 }).call(this)

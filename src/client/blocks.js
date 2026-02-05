@@ -693,8 +693,8 @@ function delta_emit({ elem, command, args, body, state }) {
 }
 
 function roster_emit({ elem, command, state }) {
-  if (!state.neighborhood) return trouble(elem, `ROSTER expected a neighborhood, like from NEIGHBORS.`)
-  inspect(elem, 'neighborhood', state)
+  if (!state.neighborhood) return state.api.trouble(elem, `ROSTER expected a neighborhood, like from NEIGHBORS.`)
+  state.api.inspect(elem, 'neighborhood', state)
   const infos = state.neighborhood
   const sites = infos.map(info => info.domain).filter(uniq)
   const any = array => array[Math.floor(Math.random() * array.length)]
@@ -703,7 +703,7 @@ function roster_emit({ elem, command, state }) {
     { type: 'roster', text: 'Mech\n' + sites.join('\n') },
     { type: 'activity', text: `ROSTER Mech\nSINCE 30 days` },
   ]
-  elem.innerHTML = command + ` ⇒ ${sites.length} sites`
+  state.api.status(elem, command, ` ⇒ ${sites.length} sites`)
   state.items = items
 }
 

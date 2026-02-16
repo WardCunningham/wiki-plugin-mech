@@ -17,6 +17,10 @@ export const api = {
   newSVG,
   SVGline,
   ticker,
+  lineupAtKey,
+  thisLineupKey,
+  lineupPages,
+  host,
 }
 
 export function trouble(elem, message) {
@@ -136,6 +140,25 @@ export function SVGline(svg, [x1, y1], [x2, y2]) {
 //   const stop = () => clearInterval(interval)
 //   return { stop }
 // }
+
+export function lineupAtKey(key) {
+  return wiki.lineup.atKey(key)
+}
+
+export function thisLineupKey(elem) {
+  return elem.closest('.page').dataset.key
+}
+
+export function lineupPages(elem) {
+  const items = [...document.querySelectorAll('.page')]
+  const index = items.indexOf(elem.closest('.page'))
+  const pages = items.slice(0, index)
+  return pages.map(div => lineupAtKey(div.dataset.key))
+}
+
+export function host() {
+  location.host
+}
 
 export async function run(nest, state) {
   const scope = nest.slice()
@@ -316,7 +339,7 @@ async function neighbors_emit({ elem, command, args, body, state }) {
         )
         Object.assign(info, extra)
       }
-      console.log({ url, page, survey, todo })
+      // console.log({ url, page, survey, todo })
     }
   }
   state.neighborhood = have.flat().sort((a, b) => b.date - a.date)
@@ -330,16 +353,17 @@ function walk_emit({ elem, command, args, state }) {
   const [, count, way] = command.match(/\b(\d+)? *(steps|days|weeks|months|hubs|lineup|references|topics)\b/) || []
   if (!way && command != 'WALK') return state.api.trouble(elem, `WALK can't understand rest of this block.`)
   const scope = {
+    host() {
+      return state.api.host()
+    },
     lineup() {
-      const items = [...document.querySelectorAll('.page')]
-      const index = items.indexOf(elem.closest('.page'))
-      return items.slice(0, index)
+      return state.api.lineupPages(elem)
     },
     references() {
-      const div = elem.closest('.page')
-      const pageObject = wiki.lineup.atKey(div.dataset.key)
+      const key = state.api.thisLineupKey(elem)
+      const pageObject = state.api.lineupAtKey(key)
       const story = pageObject.getRawPage().story
-      console.log({ div, pageObject, story })
+      // console.log('walk references', { key, pageObject, story })
       return story.filter(item => item.type == 'reference')
     },
   }
@@ -363,7 +387,7 @@ function walk_emit({ elem, command, args, state }) {
 }
 
 function tick_emit({ elem, command, args, body, state }) {
-  console.log({ command, args, body, state })
+  // console.log({ command, args, body, state })
   if (!body?.length) return state.api.trouble(elem, `TICK expects indented blocks to follow.`)
   const count = args[0] || '1'
   if (!count.match(/^[1-9][0-9]?$/)) return state.api.trouble(elem, `TICK expects a count from 1 to 99`)
@@ -494,7 +518,7 @@ function file_emit({ elem, command, args, body, state }) {
       .then(text => {
         elem.innerHTML = command + ` ⇒ ${text.length} bytes`
         state.tsv = text
-        console.log({ text })
+        // console.log({ text })
         run(body, state)
       })
   })
@@ -669,8 +693,8 @@ function delta_emit({ elem, command, args, body, state }) {
 }
 
 function roster_emit({ elem, command, state }) {
-  if (!state.neighborhood) return trouble(elem, `ROSTER expected a neighborhood, like from NEIGHBORS.`)
-  inspect(elem, 'neighborhood', state)
+  if (!state.neighborhood) return state.api.trouble(elem, `ROSTER expected a neighborhood, like from NEIGHBORS.`)
+  state.api.inspect(elem, 'neighborhood', state)
   const infos = state.neighborhood
   const sites = infos.map(info => info.domain).filter(uniq)
   const any = array => array[Math.floor(Math.random() * array.length)]
@@ -679,21 +703,20 @@ function roster_emit({ elem, command, state }) {
     { type: 'roster', text: 'Mech\n' + sites.join('\n') },
     { type: 'activity', text: `ROSTER Mech\nSINCE 30 days` },
   ]
-  elem.innerHTML = command + ` ⇒ ${sites.length} sites`
+  state.api.status(elem, command, ` ⇒ ${sites.length} sites`)
   state.items = items
 }
 
 function lineup_emit({ elem, command, state }) {
-  const items = [...document.querySelectorAll('.page')].map(div => {
-    const $page = $(div)
-    const page = $page.data('data')
-    const site = $page.data('site') || location.host
-    const slug = $page.attr('id').split('_')[0]
+  const items = state.api.lineupPages(elem).map(pageObject => {
+    const page = pageObject.getRawPage()
+    const site = pageObject.getRemoteSite(state.api.host())
     const title = page.title || 'Empty'
+    const slug = asSlug(title)
     const text = page.story[0]?.text || 'empty'
     return { type: 'reference', site, slug, title, text }
   })
-  elem.innerHTML = command + ` ⇒ ${items.length} pages`
+  state.api.status(elem, command, ` ⇒ ${items.length} pages`)
   state.items = items
 }
 
@@ -761,7 +784,7 @@ async function solo_emit({ elem, command, state }) {
   // from Solo plugin, client/solo.js
   const pageKey = elem.closest('.page').dataset.key
   const doing = { type: 'batch', sources: todo, pageKey }
-  console.log({ pageKey, doing })
+  // console.log({ pageKey, doing })
 
   if (typeof window.soloListener == 'undefined' || window.soloListener == null) {
     console.log('**** Adding solo listener')
@@ -786,27 +809,28 @@ async function solo_emit({ elem, command, state }) {
 function popup_emit({ elem, args, state }) {
   const html = []
   switch (args[0]) {
-  case 'state':
-    for (const key in state) {
-      html.push(
-        `<details>
+    case 'state':
+      for (const key in state) {
+        html.push(
+          `<details>
           <summary>${key}</summary>
-          <pre>${JSON.stringify(state[key],null,2)}</pre>
-        </details>`)}
-    break
-  case 'images':
-    if(!state.commons) return trouble(elem, `POPUP images expects "commons" state, like from "GET" "COMMONS"`)
-    const where = args[1] == 'all' ? state.commons.all : state.commons.here
-    for (const item of where.items) {
-      html.push(`<span><img height=200 src=/assets/plugins/image/${item}></span>`)}
-    break
-  default:
-    return trouble(elem, `POPUP doesn't know "${args[0]}".`)
+          <pre>${JSON.stringify(state[key], null, 2)}</pre>
+        </details>`,
+        )
+      }
+      break
+    case 'images':
+      if (!state.commons) return trouble(elem, `POPUP images expects "commons" state, like from "GET" "COMMONS"`)
+      const where = args[1] == 'all' ? state.commons.all : state.commons.here
+      for (const item of where.items) {
+        html.push(`<span><img height=200 src=/assets/plugins/image/${item}></span>`)
+      }
+      break
+    default:
+      return trouble(elem, `POPUP doesn't know "${args[0]}".`)
   }
-  wiki.dialog(elem.innerText,html.join("\n"))
+  wiki.dialog(elem.innerText, html.join('\n'))
 }
-
-
 
 // C A T A L O G
 

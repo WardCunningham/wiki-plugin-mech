@@ -68,9 +68,33 @@ const api = {
     return { api: { stop } }
   },
 
+  thisLineupKey(elem) {
+    return this.lineup.slice(-1)[0].key
+  },
+
+  lineupAtKey(key) {
+    return this.lineup.find(panel => panel.key == key).page
+  },
+
+  lineupPages(elem) {
+    // const items = [...document.querySelectorAll('.page')]
+    // const index = items.indexOf(elem.closest('.page'))
+    // const pages = items.slice(0, index)
+    // return pages.map(div => lineupAtKey(div.dataset.key))
+    const key = this.thisLineupKey(elem)
+    const index = this.lineup.findIndex(panel => panel.key == key)
+    const panels = this.lineup.slice(0, index)
+    return panels.map(panel => panel.page)
+  },
+
+  host() {
+    return 'fed.wiki'
+  },
+
   log: [],
   files: [],
   handler: null,
+  lineup: [],
 }
 
 ;(function () {
@@ -88,6 +112,10 @@ const api = {
     it('simple HELLO', async () => {
       await setup('HELLO')
       expect(api.log.join('|')).to.be('response 😀')
+    })
+    it('simple HELLO world', async () => {
+      await setup('HELLO world')
+      expect(api.log.join('|')).to.be('response 🌎')
     })
     it('trouble GOODBYE', async () => {
       await setup('GOODBYE')
@@ -182,6 +210,12 @@ const api = {
       await setup('PREVIEW items', { context, items })
       expect(api.log.join('|').replaceAll(tags, '')).to.be('show Mech Preview')
     })
+    it('ticking PREVIEW items', async () => {
+      const items = [{ type: 'map', text: '45.12, -122.67 Everywhere' }]
+      const context = { title: 'Testing Sensor Mech', itemId: '08OQWEIR' }
+      await setup('PREVIEW items', { context, items, tick: 15 })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('show Mech Preview 15')
+    })
     it('simple PREVIEW page', async () => {
       const story = [{ type: 'map', text: '45.12, -122.67 Everywhere' }]
       const page = { title: 'Map Page', story }
@@ -196,10 +230,17 @@ const api = {
     })
   })
   describe('Neighborhood Blocks', () => {
+    const domain = 'fed.wiki'
+
+    const info = title => ({
+      title,
+      slug: mech.asSlug(title),
+      date: 1517758360043,
+      synopsis: `All about ${title}.`,
+    })
+
     it('simple NEIGHBORS', async () => {
       api.files.length = 0
-      const domain = 'fed.wiki'
-      const info = title => ({ title, slug: mech.asSlug(title), date: 1517758360043, synopsis: `All about ${title}.` })
       const site = { sitemap: [info('Hello World'), info('New World Order')] }
       api.files.push([[domain, site]])
       await setup('NEIGHBORS', {})
@@ -207,8 +248,6 @@ const api = {
     })
     it('augmented NEIGHBORS', async () => {
       api.files.length = 0
-      const domain = 'fed.wiki'
-      const info = title => ({ title, slug: mech.asSlug(title), date: 1517758360043, synopsis: `All about ${title}.` })
       const site = { sitemap: [info('Hello World'), info('Test Survey')] }
       api.files.push([[domain, site]])
       api.files.push({ story: [{ type: 'frame', survey: [] }] })
@@ -219,8 +258,6 @@ const api = {
     })
     it('troubles NEIGHBORS', async () => {
       api.files.length = 0
-      const domain = 'fed.wiki'
-      const info = title => ({ title, slug: mech.asSlug(title), date: 1517758360043, synopsis: `All about ${title}.` })
       const site = { sitemap: [info('Hello World'), info('Test Survey')] }
       api.files.push([[domain, site]])
       await setup('NEIGHBORS|_Test Trouble', {})
@@ -231,87 +268,93 @@ const api = {
       await setup('WALK', { neighborhood })
       expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 0 aspects, 0 nodes')
     })
+
+    const info2 = title => ({
+      title,
+      slug: mech.asSlug(title),
+      domain,
+      date: Date.now() - 10000,
+      synopsis: `All about ${title}.`,
+    })
+
     it('trouble WALK', async () => {
-      const domain = 'fed.wiki'
-      const info = title => ({
-        title,
-        slug: mech.asSlug(title),
-        domain,
-        date: 1517758360043,
-        synopsis: `All about ${title}.`,
-      })
-      const neighborhood = [info('Hello World')]
+      const neighborhood = [info2('Hello World')]
       await setup('WALK', { neighborhood })
       expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 0 aspects, 0 nodes|trouble skipped sites')
     })
+
+    const info3 = (title, link) => ({
+      title,
+      slug: mech.asSlug(title),
+      domain,
+      date: Date.now() - 10000,
+      synopsis: `All about ${title}.`,
+      links: Object.fromEntries([[link, '02384089']]),
+    })
+
     it('test WALK 2 steps', async () => {
-      const domain = 'fed.wiki'
-      const info = (title, link) => ({
-        title,
-        slug: mech.asSlug(title),
-        domain,
-        date: 1517758360043,
-        synopsis: `All about ${title}.`,
-        links: Object.fromEntries([[link, '02384089']]),
-      })
-      const neighborhood = [info('Ying', 'yang'), info('Yang', 'ying')]
+      const neighborhood = [info3('Ying', 'yang'), info3('Yang', 'ying')]
       await setup('WALK 2 steps', { neighborhood })
       expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 2 nodes|publish aspect')
     })
     it('test WALK 1 hubs', async () => {
-      const domain = 'fed.wiki'
-      const info = (title, link) => ({
-        title,
-        slug: mech.asSlug(title),
-        domain,
-        date: 1517758360043,
-        synopsis: `All about ${title}.`,
-        links: Object.fromEntries([[link, '02384089']]),
-      })
-      const neighborhood = [info('Ying', 'yang'), info('Yang', 'ying'), info('Ding', 'yang')]
+      const neighborhood = [info3('Ying', 'yang'), info3('Yang', 'ying'), info3('Ding', 'yang')]
       await setup('WALK 1 hubs', { neighborhood })
       expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
     })
     it('test WALK 1 days', async () => {
-      const domain = 'fed.wiki'
-      const info = (title, link) => ({
-        title,
-        slug: mech.asSlug(title),
-        domain,
-        date: Date.now() - 10000,
-        synopsis: `All about ${title}.`,
-        links: Object.fromEntries([[link, '02384089']]),
-      })
-      const neighborhood = [info('Ying', 'yang'), info('Yang', 'ying'), info('Ding', 'yang')]
+      const neighborhood = [info3('Ying', 'yang'), info3('Yang', 'ying'), info3('Ding', 'yang')]
       await setup('WALK 1 days', { neighborhood })
       expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
     })
     it('test WALK 1 weeks', async () => {
-      const domain = 'fed.wiki'
-      const info = (title, link) => ({
-        title,
-        slug: mech.asSlug(title),
-        domain,
-        date: Date.now() - 10000,
-        synopsis: `All about ${title}.`,
-        links: Object.fromEntries([[link, '02384089']]),
-      })
-      const neighborhood = [info('Ying', 'yang'), info('Yang', 'ying'), info('Ding', 'yang')]
+      const neighborhood = [info3('Ying', 'yang'), info3('Yang', 'ying'), info3('Ding', 'yang')]
       await setup('WALK 1 weeks', { neighborhood })
       expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
     })
     it('test WALK 1 months', async () => {
-      const domain = 'fed.wiki'
-      const info = (title, link) => ({
-        title,
-        slug: mech.asSlug(title),
-        domain,
-        date: Date.now() - 10000,
-        synopsis: `All about ${title}.`,
-        links: Object.fromEntries([[link, '02384089']]),
-      })
-      const neighborhood = [info('Ying', 'yang'), info('Yang', 'ying'), info('Ding', 'yang')]
+      const neighborhood = [info3('Ying', 'yang'), info3('Yang', 'ying'), info3('Ding', 'yang')]
       await setup('WALK 1 months', { neighborhood })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
+    })
+    it('test WALK 1 topics', async () => {
+      const neighborhood = [info3('Ying', 'yang'), info3('Yang', 'ying'), info3('Ding', 'yang')]
+      await setup('WALK 1 topics', { neighborhood })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
+    })
+
+    const panel = (title, story = []) => ({
+      key: `Key${title}`,
+      page: {
+        getRawPage() {
+          return { title, story, site: domain, slug: mech.asSlug(title) }
+        },
+        getSlug() {
+          return mech.asSlug(title)
+        },
+        getRemoteSite(host) {
+          return host
+        },
+        getTitle() {
+          return title
+        },
+      },
+    })
+
+    it('test WALK references', async () => {
+      const neighborhood = [info3('Ying', 'yang'), info3('Yang', 'ying'), info3('Ding', 'yang')]
+      api.lineup.length = 0
+      api.lineup.push(panel('Ying'))
+      api.lineup.push(panel('Yang', [{ type: 'reference', site: domain, slug: 'ding' }]))
+      await setup('WALK references', { neighborhood })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
+    })
+    it('test WALK lineup', async () => {
+      const neighborhood = [info3('Ying', 'yang'), info3('Yang', 'ying'), info3('Ding', 'yang')]
+      api.lineup.length = 0
+      api.lineup.push(panel('Ying'))
+      api.lineup.push(panel('Yang', [{ type: 'reference', site: domain, slug: 'ding' }]))
+      await setup('WALK lineup', { neighborhood })
       expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 aspects, 3 nodes|publish aspect')
     })
   })
@@ -351,6 +394,39 @@ const api = {
       api.log.length = 0
       await api.click(false)
       expect(api.log.join('|').replaceAll(tags, '')).to.be('status |response ▶')
+    })
+  })
+  describe('Freeze Blocks', () => {
+    const domain = 'fed.wiki'
+    const panel = (title, story = []) => ({
+      key: `Key${title}`,
+      page: {
+        getRawPage() {
+          return { title, story, site: domain, slug: mech.asSlug(title) }
+        },
+        getRemoteSite(host) {
+          return host
+        },
+      },
+    })
+    it('LINEUP', async () => {
+      api.lineup.length = 0
+      api.lineup.push(panel('Ying'))
+      api.lineup.push(panel('Yang', [{ type: 'reference', site: domain, slug: 'ding' }]))
+      await setup('LINEUP', {})
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 1 pages')
+    })
+    it('ROSTER', async () => {
+      const info = (title, domain) => ({
+        title,
+        slug: mech.asSlug(title),
+        domain,
+        date: Date.now() - 10000,
+        synopsis: `All about ${title}.`,
+      })
+      const neighborhood = [info('Ying', 'fed.wiki'), info('Ding', 'fed.wiki'), info('Yang', 'dojo.fed.wiki')]
+      await setup('ROSTER', { neighborhood })
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⇒ 2 sites')
     })
   })
 }).call(this)

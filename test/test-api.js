@@ -4,7 +4,7 @@ import { api } from '../src/client/blocks.js'
 import thing from 'universal-thing'
 
 const logSymbol = thing.logSymbol
-const show = (name, thing) => console.log(name, thing[logSymbol])
+// const show = (name, thing) => console.log(name, thing[logSymbol])
 const tagged = html => html.replaceAll(/(<\w+) .*?>/g, '$1>').replaceAll(/\n */g, '')
 const has = (thing, type) => thing[logSymbol].filter(log => log.type == type)
 const onclick = thing =>
@@ -155,6 +155,36 @@ describe('api for acquisiton and generation', () => {
     const result = api.neighborhood('org')
     const pages = result.flat().map(info => info.title)
     expect(pages.join(', ')).to.be(`Hello, Goodbye`)
+  })
+  it('get pageObject for key', () => {
+    global.wiki = thing()
+    api.lineupAtKey('18274645')
+    expect(has(wiki, 'call')[0].args[0]).to.be('18274645')
+  })
+  // function thisLineupKey(elem) {
+  //   return elem.closest('.page').dataset.key
+  it('get key of this page', () => {
+    const elem = thing()
+    api.thisLineupKey(elem)
+    expect(has(elem, 'call')[0].args[0]).to.be('.page')
+  })
+  // function lineupPages(elem) {
+  //   const items = [...document.querySelectorAll('.page')]
+  //   const index = items.indexOf(elem.closest('.page'))
+  //   const pages = items.slice(0, index)
+  //   return pages.map(div => lineupAtKey(div.dataset.key))
+  it('get lineup to the left as pageObjects', () => {
+    global.document = thing()
+    const elem = thing()
+    const result = api.lineupPages(elem)
+    expect(JSON.stringify(result)).to.be('[null]')
+  })
+  // function host() {
+  //   location.host
+  it('get origin host', () => {
+    global.location = thing()
+    const result = api.host()
+    expect(location[logSymbol][0].args[0]).to.be('host')
   })
 })
 

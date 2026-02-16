@@ -339,7 +339,7 @@ async function neighbors_emit({ elem, command, args, body, state }) {
         )
         Object.assign(info, extra)
       }
-      console.log({ url, page, survey, todo })
+      // console.log({ url, page, survey, todo })
     }
   }
   state.neighborhood = have.flat().sort((a, b) => b.date - a.date)
@@ -363,7 +363,7 @@ function walk_emit({ elem, command, args, state }) {
       const key = state.api.thisLineupKey(elem)
       const pageObject = state.api.lineupAtKey(key)
       const story = pageObject.getRawPage().story
-      console.log('walk references', { key, pageObject, story })
+      // console.log('walk references', { key, pageObject, story })
       return story.filter(item => item.type == 'reference')
     },
   }
@@ -387,7 +387,7 @@ function walk_emit({ elem, command, args, state }) {
 }
 
 function tick_emit({ elem, command, args, body, state }) {
-  console.log({ command, args, body, state })
+  // console.log({ command, args, body, state })
   if (!body?.length) return state.api.trouble(elem, `TICK expects indented blocks to follow.`)
   const count = args[0] || '1'
   if (!count.match(/^[1-9][0-9]?$/)) return state.api.trouble(elem, `TICK expects a count from 1 to 99`)
@@ -518,7 +518,7 @@ function file_emit({ elem, command, args, body, state }) {
       .then(text => {
         elem.innerHTML = command + ` ⇒ ${text.length} bytes`
         state.tsv = text
-        console.log({ text })
+        // console.log({ text })
         run(body, state)
       })
   })
@@ -784,7 +784,7 @@ async function solo_emit({ elem, command, state }) {
   // from Solo plugin, client/solo.js
   const pageKey = elem.closest('.page').dataset.key
   const doing = { type: 'batch', sources: todo, pageKey }
-  console.log({ pageKey, doing })
+  // console.log({ pageKey, doing })
 
   if (typeof window.soloListener == 'undefined' || window.soloListener == null) {
     console.log('**** Adding solo listener')

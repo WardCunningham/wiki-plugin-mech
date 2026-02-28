@@ -116,6 +116,8 @@ export function walks(count, way = 'steps', neighborhood, scope = {}) {
       return lineup()
     case 'topics':
       return topics(count)
+    case 'clicks':
+      return clicks('story-unfolding', count)
   }
 
   function steps(count = 5) {
@@ -369,6 +371,57 @@ export function walks(count, way = 'steps', neighborhood, scope = {}) {
       }
 
       return output.reverse().map((graph, i) => ({ name: topic(graph), graph }))
+    }
+  }
+
+  function clicks(slug, count = 1) {
+    const node = (graph, info, props = {}) => {
+      return graph.addUniqNode(
+        '',
+        Object.assign(
+          {
+            name: info.title.replaceAll(/ /g, '\n'),
+            title: info.title,
+            site: info.domain,
+            date: info.date,
+          },
+          props,
+        ),
+      )
+    }
+
+    const aspects = []
+    let story
+    const infos = neighborhood.filter(info => info.slug == slug)
+    for (const info of infos) {
+      story = new Set(Object.keys(info.links))
+      console.log('story', story.keys())
+      for (const name in info.links) {
+        const here = neighborhood.find(info => info.slug == name)
+        const graph = new Graph()
+        if (here) {
+          const nid = node(graph, here, { color: 'lightblue' })
+          more(graph, count, nid, here)
+        } else graph.addNode('', { name: name.replaceAll(/-/g, '\n'), color: 'white' })
+        aspects.push({ name, graph })
+      }
+    }
+    return aspects
+
+    function more(graph, num, nid, info) {
+      if (num < 1) return
+      for (const slug in info.links) {
+        if (story.has(slug)) return
+        const here = neighborhood.find(info => info.slug == slug)
+        if (here) {
+          const nnid = node(graph, here)
+          graph.addRel('', nid, nnid, {})
+          more(graph, num - 1, nnid, here)
+        } else {
+          const nnid = graph.addUniqNode('', { name: slug.replaceAll(/-/g, '\n'), color: 'white' })
+          graph.addRel('', nid, nnid, {})
+        }
+      }
     }
   }
 }

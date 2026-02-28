@@ -350,7 +350,8 @@ function walk_emit({ elem, command, args, state }) {
   if (!('neighborhood' in state))
     return state.api.trouble(elem, `WALK expects state.neighborhood, like from NEIGHBORS.`)
   state.api.inspect(elem, 'neighborhood', state)
-  const [, count, way] = command.match(/\b(\d+)? *(steps|days|weeks|months|hubs|lineup|references|topics)\b/) || []
+  const [, count, way] =
+    command.match(/\b(\d+)? *(steps|days|weeks|months|hubs|lineup|references|topics|clicks)\b/) || []
   if (!way && command != 'WALK') return state.api.trouble(elem, `WALK can't understand rest of this block.`)
   const scope = {
     host() {

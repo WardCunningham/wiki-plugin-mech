@@ -833,6 +833,48 @@ function popup_emit({ elem, args, state }) {
   wiki.dialog(elem.innerText, html.join('\n'))
 }
 
+async function print_emit({ elem, command, state }) {
+  if (!state.aspect) return state.api.trouble(elem, `PRINT expects "aspect", like from WALK clicks.`)
+  if (!state.neighborhood) return state.api.trouble(elem, `PRINT expectes "neighborhood", like from NEIGHBORS.`)
+  const aspect = state.aspect
+  const neighborhood = state.neighborhood
+  console.log('print', { aspect, neighborhood })
+  const print = []
+  print.push(`<h1>Story</h1>`)
+  const clicks = aspect.find(each => each.source.match(/^WALK.*clicks/))
+  if (!clicks) return state.api.trouble(elem, `PRINT needs aspect from WALK clicks`)
+  const story = clicks.result.map(each => each.name)
+  for (const slug of story) {
+    const info = neighborhood.find(info => info.slug == slug)
+    if (info) print.push(`<p style="width:500px"><b>${info.title}</b> -- ${info.synopsis}</p>`)
+  }
+  print.push(`<h1>Garden</h1>`)
+  const garden = clicks.result.map(each => each.graph.nodes.map(node => node.props)).flat()
+  const uniq = (value, index, self) => self.indexOf(value) === index
+  const slugs = garden
+    .map(props => asSlug(props.name.replaceAll('\n', ' ')))
+    .filter(uniq)
+    .filter(slug => !story.includes(slug))
+    .sort()
+  for (const slug of slugs) {
+    const info = neighborhood.find(info => info.slug == slug)
+    if (info) print.push(`<p style="width:500px"><b>${info.title}</b> -- ${info.synopsis}</p>`)
+  }
+  console.log('print', { clicks, story, slugs, print })
+  state.api.status(elem, command, ` ⇒ ${story.length} story, ${slugs.length} garden`)
+  download(print.join('\n'), 'print-story.html', 'text/html')
+
+  function download(string, file, mime = 'text/json') {
+    var data = `data:${mime};charset=utf-8,` + encodeURIComponent(string)
+    var anchor = document.createElement('a')
+    anchor.setAttribute('href', data)
+    anchor.setAttribute('download', file)
+    document.body.appendChild(anchor) // required for firefox
+    anchor.click()
+    anchor.remove()
+  }
+}
+
 // C A T A L O G
 
 export const blocks = {
@@ -863,4 +905,5 @@ export const blocks = {
   MESSAGE: { emit: message_emit },
   SOLO: { emit: solo_emit },
   POPUP: { emit: popup_emit },
+  PRINT: { emit: print_emit },
 }

@@ -367,6 +367,10 @@ function walk_emit({ elem, command, args, state }) {
       // console.log('walk references', { key, pageObject, story })
       return story.filter(item => item.type == 'reference')
     },
+    page() {
+      if (!state.page) state.api.trouble(elem, 'WALK expects a page, like from FROM')
+      return state.page
+    },
   }
   const steps = walks(count, way, state.neighborhood, scope)
   const aspects = steps.filter(({ graph }) => graph)
@@ -840,14 +844,14 @@ async function print_emit({ elem, command, state }) {
   const neighborhood = state.neighborhood
   console.log('print', { aspect, neighborhood })
   const print = []
+  const missing = []
+
   print.push(`<h1>Story</h1>`)
   const clicks = aspect.find(each => each.source.match(/^WALK.*clicks/))
   if (!clicks) return state.api.trouble(elem, `PRINT needs aspect from WALK clicks`)
   const story = clicks.result.map(each => each.name)
-  for (const slug of story) {
-    const info = neighborhood.find(info => info.slug == slug)
-    if (info) print.push(`<p style="width:500px"><b>${info.title}</b> -- ${info.synopsis}</p>`)
-  }
+  output(story)
+
   print.push(`<h1>Garden</h1>`)
   const garden = clicks.result.map(each => each.graph.nodes.map(node => node.props)).flat()
   const uniq = (value, index, self) => self.indexOf(value) === index
@@ -856,13 +860,25 @@ async function print_emit({ elem, command, state }) {
     .filter(uniq)
     .filter(slug => !story.includes(slug))
     .sort()
-  for (const slug of slugs) {
-    const info = neighborhood.find(info => info.slug == slug)
-    if (info) print.push(`<p style="width:500px"><b>${info.title}</b> -- ${info.synopsis}</p>`)
+  output(slugs)
+
+  if (missing.length) {
+    print.push(`<h1>Missing</h1>`)
+    const text = missing.filter(uniq).sort().join('\n')
+    print.push(`<pre>${text}</pre>`)
   }
+
   console.log('print', { clicks, story, slugs, print })
-  state.api.status(elem, command, ` ⇒ ${story.length} story, ${slugs.length} garden`)
+  state.api.status(elem, command, ` ⇒ ${story.length} story, ${slugs.length} garden, ${missing.length} missing`)
   download(print.join('\n'), 'print-story.html', 'text/html')
+
+  function output(slugs) {
+    for (const slug of slugs) {
+      const info = neighborhood.find(info => info.slug == slug)
+      if (info) print.push(`<p style="width:640px"><b>${info.title}</b> -- ${info.synopsis}</p>`)
+      else missing.push(slug)
+    }
+  }
 
   function download(string, file, mime = 'text/json') {
     var data = `data:${mime};charset=utf-8,` + encodeURIComponent(string)

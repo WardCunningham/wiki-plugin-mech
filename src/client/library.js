@@ -117,7 +117,7 @@ export function walks(count, way = 'steps', neighborhood, scope = {}) {
     case 'topics':
       return topics(count)
     case 'clicks':
-      return clicks('story-unfolding', count)
+      return clicks(count)
   }
 
   function steps(count = 5) {
@@ -374,7 +374,7 @@ export function walks(count, way = 'steps', neighborhood, scope = {}) {
     }
   }
 
-  function clicks(slug, count = 1) {
+  function clicks(count = 1) {
     const node = (graph, info, props = {}) => {
       return graph.addUniqNode(
         '',
@@ -391,27 +391,28 @@ export function walks(count, way = 'steps', neighborhood, scope = {}) {
     }
 
     const aspects = []
-    let story
-    const infos = neighborhood.filter(info => info.slug == slug)
-    for (const info of infos) {
-      story = new Set(Object.keys(info.links))
-      console.log('story', story.keys())
-      for (const name in info.links) {
-        const here = neighborhood.find(info => info.slug == name)
-        const graph = new Graph()
-        if (here) {
-          const nid = node(graph, here, { color: 'lightblue' })
-          more(graph, count, nid, here)
-        } else graph.addNode('', { name: name.replaceAll(/-/g, '\n'), color: 'white' })
-        aspects.push({ name, graph })
-      }
+    const items = scope.page().story
+    const story = items.filter(item => item.type == 'reference').map(item => item.slug)
+    // const infos = neighborhood.filter(info => info.slug == slug)
+    // for (const info of infos) {
+    //   story = new Set(Object.keys(info.links))
+    //   console.log('story', story.keys())
+    for (const slug of story) {
+      const here = neighborhood.find(info => info.slug == slug)
+      const graph = new Graph()
+      if (here) {
+        const nid = node(graph, here, { color: 'lightblue' })
+        more(graph, count, nid, here)
+      } else graph.addNode('', { name: slug.replaceAll(/-/g, '\n'), color: 'white' })
+      aspects.push({ name: slug, graph })
     }
+    // }
     return aspects
 
     function more(graph, num, nid, info) {
       if (num < 1) return
       for (const slug in info.links) {
-        if (story.has(slug)) return
+        if (story.includes(slug)) return
         const here = neighborhood.find(info => info.slug == slug)
         if (here) {
           const nnid = node(graph, here)

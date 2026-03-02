@@ -880,19 +880,24 @@ async function print_emit({ elem, command, state }) {
       toggle = !toggle
       return toggle ? ' ⏳' : ' ⌛'
     }
+    const expand = text => {
+      return text
+        .replaceAll(/\[\[(.*?)\]\]/g, (m, p1) => `<a href="#${asSlug(p1)}">${p1}</a>`)
+        .replaceAll(/\[.*? (.*?)\]/g, (m, p1) => `<i>${p1}</i>`)
+    }
     for (const slug of slugs) {
       const info = neighborhood.find(info => info.slug == slug)
       if (!info) {
         missing.push(slug)
         continue
       }
-      if (outline) print.push(`<p ${style}"><b>${info.title}</b> -- ${info.synopsis}</p>`)
+      if (outline) print.push(`<p id="${info.slug}" ${style}"><b>${info.title}</b> -- ${expand(info.synopsis)}</p>`)
       else {
         state.api.status(elem, command, flip())
         const page = await state.api.jfetch(`//${info.domain}/${info.slug}.json`)
-        print.push(`<section><h3>${info.title}</h3>`)
+        print.push(`<section id="${info.slug}"><h3>${info.title}</h3>`)
         for (const item of page.story) {
-          print, print.push(`<p ${style}>${item.text}</p>`)
+          if (item.text) print, print.push(`<p ${style}>${expand(item.text)}</p>`)
         }
         print.push(`</section>`)
       }

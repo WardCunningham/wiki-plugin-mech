@@ -161,7 +161,7 @@ const api = {
     it('simple FROM', async () => {
       const text = api.files.push({ story: [{}] })
       await setup('FROM datalog|_HELLO')
-      expect(api.log.join('|').replaceAll(tags, '')).to.be('response ⏳|fetch //datalog.json|response ⌛|response 😀')
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⏳|fetch //datalog.json|status  ⌛|response 😀')
     })
 
     it('see Testing Sensor Mech', async () => {
@@ -170,7 +170,7 @@ const api = {
       api.files.push({ '28FF2E41': 203, '28FF6BCE': 203, '28FF9763': 202 })
       await setup('FROM datalog|_SENSOR garage|__REPORT')
       expect(api.log.join('|').replaceAll(tags, '')).to.be(
-        'response ⏳|fetch //datalog.json|response ⌛|status |status  ⏳|fetch http://home.c2.com:8023|status  ⌛|response 54.80°F',
+        'status  ⏳|fetch //datalog.json|status  ⌛|status |status  ⏳|fetch http://home.c2.com:8023|status  ⌛|response 54.80°F',
       )
     })
   })

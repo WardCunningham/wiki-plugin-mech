@@ -22,6 +22,7 @@ export const api = {
   lineupPages,
   host,
   download,
+  closeTags,
 }
 
 export function trouble(elem, message) {
@@ -169,6 +170,12 @@ export function download(string, file, mime = 'text/json') {
   document.body.appendChild(anchor) // required for firefox
   anchor.click()
   anchor.remove()
+}
+
+export function closeTags(html) {
+  const div = document.createElement('div')
+  div.innerHTML = html
+  return div.innerHTML
 }
 
 export async function run(nest, state) {
@@ -855,7 +862,7 @@ async function print_emit({ elem, command, state }) {
   const neighborhood = state.neighborhood
   console.log('print', { aspect, neighborhood })
   const print = []
-  const tally = { missing: [], domains: [], wishes: [], errors: [] }
+  const tally = { missing: [], omitted: [], domains: [], wishes: [], errors: [] }
   const count = (hits, what, slug) => {
     if (!(what in hits)) hits[what] = []
     hits[what].push(slug)
@@ -894,10 +901,11 @@ async function print_emit({ elem, command, state }) {
     .sort()
   await output(slugs, 'garden')
 
+  report(tally.domains, 'Sourced Sites')
   report(tally.missing, 'Missing Pages')
-  report(tally.domains, 'Sites Referenced')
-  report(tally.wishes, 'Item Type Wishes')
-  report(tally.errors, 'Program errors')
+  report(tally.omitted, 'Omitted Links')
+  report(tally.wishes, 'Unusual Plugins')
+  report(tally.errors, 'Program Errors')
   if (items.length) state.items = items
 
   state.api.status(elem, command, ` ⇒ ${story.length} story, ${slugs.length} garden`)
@@ -922,6 +930,7 @@ async function print_emit({ elem, command, state }) {
         continue
       }
       count(tally.domains, info.domain, info.slug)
+      for (const link in info.links) if (!slugs.includes(link)) count(tally.omitted, slug, link)
       if (outline)
         print.push(
           `<p id="${info.slug}" ${style}"><b title="${info.domain}">${info.title}</b> -- ${expand(info.synopsis)}</p>`,
@@ -934,7 +943,17 @@ async function print_emit({ elem, command, state }) {
           print.push(`<section id="${info.slug}"><h3 title="${info.domain}">${info.title}</h3>`)
           for (const item of page.story) {
             if (item.type != 'paragraph') count(tally.wishes, item.type, slug)
-            if (item.text) print, print.push(`<p ${style}>${expand(item.text)}</p>`)
+            switch (item.type) {
+              case 'paragraph':
+              case 'markdown':
+                print.push(`<p ${style}>${expand(item.text)}</p>`)
+                break
+              case 'html':
+                print.push(`<p ${style}>${expand(state.api.closeTags(item.text))}</p>`)
+                break
+              default:
+                print.push(`<p ${style}>Item type "${item.type}" omitted.</p>`)
+            }
           }
           print.push(`</section>`)
         } catch (err) {

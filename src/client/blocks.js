@@ -21,6 +21,7 @@ export const api = {
   thisLineupKey,
   lineupPages,
   host,
+  download,
 }
 
 export function trouble(elem, message) {
@@ -158,6 +159,16 @@ export function lineupPages(elem) {
 
 export function host() {
   location.host
+}
+
+export function download(string, file, mime = 'text/json') {
+  var data = `data:${mime};charset=utf-8,` + encodeURIComponent(string)
+  var anchor = document.createElement('a')
+  anchor.setAttribute('href', data)
+  anchor.setAttribute('download', file)
+  document.body.appendChild(anchor) // required for firefox
+  anchor.click()
+  anchor.remove()
 }
 
 export async function run(nest, state) {
@@ -844,14 +855,34 @@ async function print_emit({ elem, command, state }) {
   const neighborhood = state.neighborhood
   console.log('print', { aspect, neighborhood })
   const print = []
-  const missing = []
+  const tally = { missing: [], domains: [], wishes: [], errors: [] }
+  const count = (hits, what, slug) => {
+    if (!(what in hits)) hits[what] = []
+    hits[what].push(slug)
+  }
+  const report = (hits, heading) => {
+    if (Object.keys(hits).length) {
+      const details = [`<h3>${heading}</h3>`]
+      for (const what in hits) {
+        const list = hits[what]
+          .filter(uniq)
+          .sort()
+          .map(slug => `[[${slug}]]`)
+          .join('\n')
+        details.push(`<details><summary>${what} × ${hits[what].length}</summary>
+          <pre>${list}</pre></details>`)
+      }
+      items.push({ type: 'html', text: details.join('\n ') })
+    }
+  }
+  const items = []
   const outline = command.match(/\boutline\b/)
 
   print.push(`<h1>Story</h1>`)
   const clicks = aspect.find(each => each.source.match(/^WALK.*clicks/))
   if (!clicks) return state.api.trouble(elem, `PRINT needs aspect from WALK clicks`)
   const story = clicks.result.map(each => each.name)
-  await output(story)
+  await output(story, 'story')
 
   print.push(`<h1>Garden</h1>`)
   const garden = clicks.result.map(each => each.graph.nodes.map(node => node.props)).flat()
@@ -861,19 +892,18 @@ async function print_emit({ elem, command, state }) {
     .filter(uniq)
     .filter(slug => !story.includes(slug))
     .sort()
-  await output(slugs)
+  await output(slugs, 'garden')
 
-  if (missing.length) {
-    print.push(`<h1>Missing</h1>`)
-    const text = missing.filter(uniq).sort().join('\n')
-    print.push(`<pre>${text}</pre>`)
-  }
+  report(tally.missing, 'Missing Pages')
+  report(tally.domains, 'Sites Referenced')
+  report(tally.wishes, 'Item Type Wishes')
+  report(tally.errors, 'Program errors')
+  if (items.length) state.items = items
 
-  console.log('print', { clicks, story, slugs, print })
-  state.api.status(elem, command, ` ⇒ ${story.length} story, ${slugs.length} garden, ${missing.length} missing`)
-  download(print.join('\n'), 'print-story.html', 'text/html')
+  state.api.status(elem, command, ` ⇒ ${story.length} story, ${slugs.length} garden`)
+  state.api.download(print.join('\n'), 'print-story.html', 'text/html')
 
-  async function output(slugs) {
+  async function output(slugs, section) {
     const style = `style="width:640px"`
     let toggle = false
     const flip = () => {
@@ -888,30 +918,30 @@ async function print_emit({ elem, command, state }) {
     for (const slug of slugs) {
       const info = neighborhood.find(info => info.slug == slug)
       if (!info) {
-        missing.push(slug)
+        count(tally.missing, section, slug)
         continue
       }
-      if (outline) print.push(`<p id="${info.slug}" ${style}"><b>${info.title}</b> -- ${expand(info.synopsis)}</p>`)
+      count(tally.domains, info.domain, info.slug)
+      if (outline)
+        print.push(
+          `<p id="${info.slug}" ${style}"><b title="${info.domain}">${info.title}</b> -- ${expand(info.synopsis)}</p>`,
+        )
       else {
         state.api.status(elem, command, flip())
-        const page = await state.api.jfetch(`//${info.domain}/${info.slug}.json`)
-        print.push(`<section id="${info.slug}"><h3>${info.title}</h3>`)
-        for (const item of page.story) {
-          if (item.text) print, print.push(`<p ${style}>${expand(item.text)}</p>`)
+        try {
+          console.log(info.domain, info.title)
+          const page = await state.api.jfetch(`//${info.domain}/${info.slug}.json`)
+          print.push(`<section id="${info.slug}"><h3 title="${info.domain}">${info.title}</h3>`)
+          for (const item of page.story) {
+            if (item.type != 'paragraph') count(tally.wishes, item.type, slug)
+            if (item.text) print, print.push(`<p ${style}>${expand(item.text)}</p>`)
+          }
+          print.push(`</section>`)
+        } catch (err) {
+          count(tally.errors, err.message, info.slug)
         }
-        print.push(`</section>`)
       }
     }
-  }
-
-  function download(string, file, mime = 'text/json') {
-    var data = `data:${mime};charset=utf-8,` + encodeURIComponent(string)
-    var anchor = document.createElement('a')
-    anchor.setAttribute('href', data)
-    anchor.setAttribute('download', file)
-    document.body.appendChild(anchor) // required for firefox
-    anchor.click()
-    anchor.remove()
   }
 }
 

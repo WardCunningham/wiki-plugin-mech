@@ -21,11 +21,12 @@ describe('mech as plugin', () => {
     global.wiki = thing()
     global.window = thing()
     global.document = thing()
+    global.$ = thing(returning('length', 1))
     plugin.emit($item, item)
     // show('$item',$item)
     // show('document',document)
     const html = has($item, 'call')[1].args[0]
-    expect(tagged(html)).to.be('<div><font></font><span>HELLO</span></div>')
+    expect(tagged(html)).to.be('<div><div></div><span>HELLO</span></div>')
     const happy = has(document, 'set').find(set => set.args[1].match(/😀/))
     expect(!!happy).to.be(true)
   })

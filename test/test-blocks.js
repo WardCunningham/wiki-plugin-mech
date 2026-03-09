@@ -91,6 +91,8 @@ const api = {
     return 'fed.wiki'
   },
 
+  reset(elem) {},
+
   log: [],
   files: [],
   handler: null,
@@ -132,9 +134,9 @@ const api = {
       expect(api.log.join('|').replaceAll(tags, '')).to.be('response ▶|response 😀')
     })
     it('shift CLICK HELLO', async () => {
-      await setup('CLICK|_HELLO')
+      await setup('CLICK|_HELLO', { neighbors: [] })
       await api.click(true)
-      expect(api.log.join('|').replaceAll(tags, '')).to.be('response ▶|inspect api|inspect debug|response 😀')
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('response ▶|inspect neighbors|response 😀')
     })
     it('trouble CLICK', async () => {
       await setup('CLICK')

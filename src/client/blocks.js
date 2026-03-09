@@ -23,37 +23,34 @@ export const api = {
   host,
   download,
   closeTags,
+  reset,
 }
 
 export function trouble(elem, message) {
   if (elem.innerText.match(/✖︎/)) return
-  elem.innerHTML += `<button style="border-width:0;color:red;">✖︎</button>`
+  elem.innerHTML += `<button class=trouble>✖︎</button>`
   elem.querySelector('button').addEventListener('click', event => {
-    elem.outerHTML += `<span style="width:80%;color:gray;">${message}</span>`
+    elem.outerHTML += `<span class=trouble>${message}</span>`
   })
 }
 
 export function inspect(elem, key, state) {
-  const tap = elem.previousElementSibling
+  const div = elem.previousElementSibling
   if (state.debug) {
-    const value = state[key]
-    tap.innerHTML = `${key} ⇒ `
-    tap.addEventListener('click', event => {
-      console.log({ key, value })
-      let look = tap.previousElementSibling
-      if (!look?.classList.contains('look')) {
-        const div = document.createElement('div')
-        div.classList.add('look')
-        tap.insertAdjacentElement('beforebegin', div)
-        look = tap.previousElementSibling
-      }
-      let text = JSON.stringify(value, null, 1)
-      if (text.length > 300) text = text.substring(0, 400) + '...'
-      const css = `border:1px solid black; background-color:#f8f8f8; padding:8px; color:gray; word-break: break-all;`
-      look.innerHTML = `<div style="${css}">${text}</div>`
+    let look = div.querySelector(`.look [data-key="${key}"]`)
+    if (!look) {
+      look = document.createElement('div')
+      look.classList.add('look')
+      look.dataset.key = key
+      look.innerHTML = `<font color=gray size=small>${key} ⇒</font>`
+      div.insertAdjacentElement('beforeend', look)
+    }
+    look.querySelector('font').addEventListener('click', event => {
+      const see = document.createElement('div')
+      see.classList.add('see')
+      see.innerText = JSON.stringify(state[key]).substring(0, 400) + ' ...'
+      look.insertAdjacentElement('beforeend', see)
     })
-  } else {
-    tap.innerHTML = ''
   }
 }
 
@@ -178,6 +175,12 @@ export function closeTags(html) {
   return div.innerHTML
 }
 
+export function reset(elem) {
+  const div = elem.parentElement
+  console.log('reset', div)
+  div.querySelectorAll('div.look').forEach(e => (e.innerText = ''))
+}
+
 export async function run(nest, state) {
   const scope = nest.slice()
   while (scope.length) {
@@ -202,6 +205,7 @@ export async function run(nest, state) {
 function click_emit({ elem, body, state }) {
   if (!body?.length) return state.api.trouble(elem, `CLICK expects indented blocks to follow.`)
   state.api.button(elem, '▶', event => {
+    state.api.reset(elem)
     state.debug = event.shiftKey
     run(body, state)
   })
@@ -209,15 +213,19 @@ function click_emit({ elem, body, state }) {
 
 function hello_emit({ elem, args, state }) {
   const world = args[0] == 'world' ? ' 🌎' : ' 😀'
-  for (const key of Object.keys(state)) state.api.inspect(elem, key, state)
+  const keys = Object.keys(state).filter(key => !['context', 'api', 'debug'].includes(key))
+  for (const key of keys) state.api.inspect(elem, key, state)
   state.api.response(elem, world)
 }
 
 async function from_emit({ elem, command, args, body, state }) {
+  if (!args[0]) return state.api.trouble(elem, `FROM expects site/slug as way to federated wiki page.`)
   if (!body?.length) return state.api.trouble(elem, `FROM expects indented blocks to follow.`)
   const url = args[0]
   state.api.status(elem, command, ' ⏳')
-  state.page = await state.api.jfetch(`//${url}.json`)
+  const page = await state.api.jfetch(`//${url}.json`)
+  if (!page) return state.api.trouble(elem, `FROM could not fetch "${url}" `)
+  state.page = page
   state.api.status(elem, command, ' ⌛')
   run(body, state)
 }
@@ -387,6 +395,7 @@ function walk_emit({ elem, command, args, state }) {
     },
     page() {
       if (!state.page) state.api.trouble(elem, 'WALK expects a page, like from FROM')
+      state.api.inspect(elem, 'page', state)
       return state.page
     },
   }
@@ -857,7 +866,9 @@ function popup_emit({ elem, args, state }) {
 
 async function print_emit({ elem, command, state }) {
   if (!state.aspect) return state.api.trouble(elem, `PRINT expects "aspect", like from WALK clicks.`)
+  state.api.inspect(elem, 'aspect', state)
   if (!state.neighborhood) return state.api.trouble(elem, `PRINT expectes "neighborhood", like from NEIGHBORS.`)
+  state.api.inspect(elem, 'neighborhood', state)
   const aspect = state.aspect
   const neighborhood = state.neighborhood
   console.log('print', { aspect, neighborhood })

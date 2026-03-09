@@ -16,6 +16,10 @@ function expand(text) {
 // P L U G I N
 
 function emit($item, item) {
+  if (!$("link[href='/plugins/mech/mech.css']").length) {
+    $('<link rel="stylesheet" href="/plugins/mech/mech.css" type="text/css">').appendTo('head')
+  }
+
   const lines = item.text.split(/\n/)
   const nest = tree(lines, [], 0)
   const html = format(nest)

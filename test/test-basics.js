@@ -45,23 +45,21 @@ import expect from 'expect.js'
         var nest = mech.tree(lines, [], 0)
         var html = mech.format(nest)
         var result = html.replaceAll(/<(\/?.\w+).*?>/g, '<$1>')
-        expect(result).to.be('<font></font><span>HELLO</span>')
+        expect(result).to.be('<div></div><span>HELLO</span>')
       })
       it('nested CLICK HELLO', () => {
         var lines = ['CLICK', ' HELLO']
         var nest = mech.tree(lines, [], 0)
         var html = mech.format(nest)
         var result = html.replaceAll(/<(\/?.\w+).*?>/g, '<$1>')
-        expect(result).to.be('<font></font><span>CLICK</span>\n<div><font></font><span>HELLO</span></div>')
+        expect(result).to.be('<div></div><span>CLICK</span>\n<div><div></div><span>HELLO</span></div>')
       })
       it('nested NEIGHBORS', () => {
         var lines = ['NEIGHBORS', ' JournalForkSurvey']
         var nest = mech.tree(lines, [], 0)
         var html = mech.format(nest)
         var result = html.replaceAll(/<(\/?.\w+).*?>/g, '<$1>')
-        expect(result).to.be(
-          '<font></font><span>NEIGHBORS</span>\n<div><font></font><span>JournalForkSurvey</span></div>',
-        )
+        expect(result).to.be('<div></div><span>NEIGHBORS</span>\n<div><div></div><span>JournalForkSurvey</span></div>')
       })
     })
   })

@@ -33,14 +33,11 @@ export function format(nest) {
     for (const part of more) {
       const key = `${unique}.${path.join('.')}`
       part.key = key
-      if ('command' in part)
-        html.push(
-          `<font color=gray size=small></font><span style="display: block;" id=${key}>${expand(part.command)}</span>`,
-        )
-      else html.push(`<div id=${key} style="padding-left:15px">${block(part, [...path, 0])}</div>`)
+      if ('command' in part) html.push(`<div></div><span id=${key} class=block >${expand(part.command)}</span>`)
+      else html.push(`<div id=${key} class=body>${block(part, [...path, 0])}</div>`)
       path[path.length - 1]++
     }
-    return html.join('\n')
+    return html.join(`\n`)
   }
   return block(nest, [0])
 }

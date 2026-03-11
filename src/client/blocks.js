@@ -864,7 +864,9 @@ function popup_emit({ elem, args, state }) {
   wiki.dialog(elem.innerText, html.join('\n'))
 }
 
-async function print_emit({ elem, command, state }) {
+async function print_emit({ elem, command, args, state }) {
+  if (!['outline', 'draft'].includes(args[0])) return state.api.trouble(elem, 'Expects PRINT outline or PRINT draft.')
+  const way = args[0]
   if (!state.aspect) return state.api.trouble(elem, `PRINT expects "aspect", like from WALK clicks.`)
   state.api.inspect(elem, 'aspect', state)
   if (!state.neighborhood) return state.api.trouble(elem, `PRINT expectes "neighborhood", like from NEIGHBORS.`)
@@ -873,14 +875,19 @@ async function print_emit({ elem, command, state }) {
   const neighborhood = state.neighborhood
   console.log('print', { aspect, neighborhood })
   const print = []
-  const tally = { missing: [], omitted: [], domains: [], wishes: [], errors: [] }
+  const tally = { missing: [], omitted: [], domains: [], forks: [], wishes: [], errors: [] }
+  const explain = {}
   const count = (hits, what, slug) => {
     if (!(what in hits)) hits[what] = []
     hits[what].push(slug)
   }
-  const report = (hits, heading) => {
-    if (Object.keys(hits).length) {
-      const details = [`<h3>${heading}</h3>`]
+  const report = (counter, heading) => {
+    const hits = tally[counter]
+    console.log('explain', counter, explain[counter])
+    const hash = s => Math.abs(s.split('').reduce((h, c) => c.charCodeAt(0) + (h << 6) + (h << 16) - h, 0)).toString(16)
+    const keys = Object.keys(hits)
+    if (keys.length) {
+      const details = []
       for (const what in hits) {
         const list = hits[what]
           .filter(uniq)
@@ -890,11 +897,12 @@ async function print_emit({ elem, command, state }) {
         details.push(`<details><summary>${what} × ${hits[what].length}</summary>
           <pre>${list}</pre></details>`)
       }
+      items.push({ type: 'markdown', text: `# ${heading}\n${explain[counter] || ''}`, id: hash(heading) })
+      if (keys[0].match(/\.\w+\.\w+$/)) items.push({ type: 'roster', text: keys.join('\n') })
       items.push({ type: 'html', text: details.join('\n ') })
     }
   }
   const items = []
-  const outline = command.match(/\boutline\b/)
 
   print.push(`<h1>Story</h1>`)
   const clicks = aspect.find(each => each.source.match(/^WALK.*clicks/))
@@ -912,23 +920,20 @@ async function print_emit({ elem, command, state }) {
     .sort()
   await output(slugs, 'garden')
 
-  report(tally.domains, 'Sourced Sites')
-  report(tally.missing, 'Missing Pages')
-  report(tally.omitted, 'Omitted Links')
-  report(tally.wishes, 'Unusual Plugins')
-  report(tally.errors, 'Program Errors')
+  console.log({ tally, explain })
+  report('domains', 'Sourced Sites')
+  report('missing', 'Missing Pages')
+  report('omitted', 'Omitted Links')
+  report('forks', 'Omitted Forks')
+  report('wishes', 'Unusual Plugins')
+  report('errors', 'Program Errors')
   if (items.length) state.items = items
 
   state.api.status(elem, command, ` ⇒ ${story.length} story, ${slugs.length} garden`)
-  state.api.download(print.join('\n'), 'print-story.html', 'text/html')
+  state.api.download(print.join('\n'), `print-${way}.html`, 'text/html')
 
   async function output(slugs, section) {
     const style = `style="width:640px"`
-    let toggle = false
-    const flip = () => {
-      toggle = !toggle
-      return toggle ? ' ⏳' : ' ⌛'
-    }
     const expand = text => {
       return text
         .replaceAll(/\[\[(.*?)\]\]/g, (m, p1) => `<a href="#${asSlug(p1)}">${p1}</a>`)
@@ -938,22 +943,30 @@ async function print_emit({ elem, command, state }) {
       const info = neighborhood.find(info => info.slug == slug)
       if (!info) {
         count(tally.missing, section, slug)
+        explain.missing = `These pages weren't found in PRINT's neighborhood.`
         continue
       }
       count(tally.domains, info.domain, info.slug)
-      for (const link in info.links) if (!slugs.includes(link)) count(tally.omitted, slug, link)
-      if (outline)
+      explain.domains = `Pages have been retrieved from these sites. Remove sites from the PRINT neighborhood if these should be found elsewhere.`
+      if (section == 'garden') {
+        for (const link in info.links) if (!slugs.includes(link)) count(tally.omitted, slug, link)
+        explain.omitted = `Garden pages with links to pages omitted from the garden. These may show up with a deeper WALK into the garden'`
+      }
+      if (way == 'outline')
         print.push(
           `<p id="${info.slug}" ${style}"><b title="${info.domain}">${info.title}</b> -- ${expand(info.synopsis)}</p>`,
         )
       else {
-        state.api.status(elem, command, flip())
+        const where = slugs.indexOf(slug) + 1
+        state.api.status(elem, command, ` ⇒ ${where} of ${slugs.length} from ${section}`)
         try {
           console.log(info.domain, info.title)
           const page = await state.api.jfetch(`//${info.domain}/${info.slug}.json`)
           print.push(`<section id="${info.slug}"><h3 title="${info.domain}">${info.title}</h3>`)
           for (const item of page.story) {
             if (item.type != 'paragraph') count(tally.wishes, item.type, slug)
+            explain.wishes =
+              'Items of type "paragraph" are expected. Types "markdown" and "html" may show without revision. The remainder appear as only a one-line note.'
             switch (item.type) {
               case 'paragraph':
               case 'markdown':
@@ -966,9 +979,17 @@ async function print_emit({ elem, command, state }) {
                 print.push(`<p ${style}>Item type "${item.type}" omitted.</p>`)
             }
           }
+          for (const action of page.journal) {
+            if (action.site && !neighborhood.find(info => info.domain == action.site))
+              count(tally.forks, action.site, slug)
+            explain.forks =
+              'Wiki remembers where pages may once have lived but PRINT only looks for pages in the neighborhoods prvided.'
+          }
           print.push(`</section>`)
         } catch (err) {
           count(tally.errors, err.message, info.slug)
+          explain.errors =
+            'Any pages that lead to program errors should be explored by developers. Until then they will be ignored.'
         }
       }
     }

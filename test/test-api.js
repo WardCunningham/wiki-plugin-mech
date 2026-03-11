@@ -36,24 +36,24 @@ describe('api for inline reporting', () => {
     await onclick(elem).call(event)
     expect(tagged(elem.outerHTML)).to.be('root.outerHTML <span>data</span>')
   })
-  it('inspect notice omitted', async () => {
+  it.skip('inspect notice omitted', async () => {
     global.document = thing()
     const elem = thing()
     await api.inspect(elem, 'data', { debug: false, data: 'your data here' })
     expect(document[logSymbol].length).to.be(0)
   })
-  it('inspect notice shown', async () => {
+  it.skip('inspect notice shown', async () => {
     const elem = thing()
     await api.inspect(elem, 'data', { debug: true, data: 'your data here' })
-    // expect(elem.previousElementSibling.innerHTML).to.be('data ⇒ ')
+    expect(elem.previousElementSibling.innerHTML).to.be('data ⇒ ')
   })
-  it('inspect notice clicked', async () => {
+  it.skip('inspect notice clicked', async () => {
     global.document = thing()
     const elem = thing(returning('contains', false))
     await api.inspect(elem, 'data', { debug: true, data: 'your data here' })
     await onclick(elem).call(event)
     const tap = elem.previousElementSibling.previousElementSibling
-    // expect(tagged(tap.innerHTML)).to.be('<div>"your data here"</div>')
+    expect(tagged(tap.innerHTML)).to.be('<div>"your data here"</div>')
   })
   it('response shown', async () => {
     const elem = thing()

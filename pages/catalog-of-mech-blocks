@@ -4,12 +4,177 @@
     {
       "type": "paragraph",
       "id": "2802ed0bdf73bd98",
-      "text": "Our work here is just beginning."
+      "text": "Each block is a capitalized word that leads to specific computations. Blocks use and update state passed from block to block. They can reach into the federated wiki client and server-side environment. Expect them to offer informative messages as they run."
+    },
+    {
+      "type": "markdown",
+      "id": "ae5a798937198031",
+      "text": "# Client"
     },
     {
       "type": "paragraph",
-      "id": "fc6c61ba9968734b",
-      "text": "There are no more blocks yet other than CLICK and HELLO."
+      "id": "f7a7b0a6589250e2",
+      "text": "[[CLICK]] — Offer to proceed once user clicks."
+    },
+    {
+      "type": "paragraph",
+      "id": "becdc6dd737d7f6a",
+      "text": "[[DELTA]] — Apply recent remote site changes."
+    },
+    {
+      "type": "paragraph",
+      "id": "e5dbc564e1d54a41",
+      "text": "[[FILE]] — User selects one of avalable files."
+    },
+    {
+      "type": "paragraph",
+      "id": "1033f16d3f024a47",
+      "text": "[[FORWARD]] — Move the drawing \"turtle\" forward."
+    },
+    {
+      "type": "paragraph",
+      "id": "abc462d385a0459f",
+      "text": "[[FROM]] — Read sensor endpoints from a page."
+    },
+    {
+      "type": "paragraph",
+      "id": "e78c3e43a0e8d97a",
+      "text": "[[GET]] — Await a result from the server."
+    },
+    {
+      "type": "paragraph",
+      "id": "d2ebf84d1e3bddfb",
+      "text": "[[HELLO]] — Add a happy face each time run."
+    },
+    {
+      "type": "paragraph",
+      "id": "52d4f2dc1a544d95",
+      "text": "[[KWIC]] — Costruct a Keword-In-Context index."
+    },
+    {
+      "type": "paragraph",
+      "id": "e28130e126f1618a",
+      "text": "[[LINEUP]] — Make a page from current lineup."
+    },
+    {
+      "type": "paragraph",
+      "id": "081c2a7d3832f64d",
+      "text": "[[LISTEN]] — Wait for a specific message."
+    },
+    {
+      "type": "paragraph",
+      "id": "8c153cbacbc5990d",
+      "text": "[[MESSAGE]] — Send a specific message."
+    },
+    {
+      "type": "paragraph",
+      "id": "f57a2887eac58cbd",
+      "text": "[[NEIGHBORS]] — Retrieve avalable neighborhood sitemaps."
+    },
+    {
+      "type": "paragraph",
+      "id": "acf7d4c9441658f3",
+      "text": "[[PREVIEW]] — Display computed state as a ghost page."
+    },
+    {
+      "type": "paragraph",
+      "id": "5ad261075a1c1ee1",
+      "text": "[[RANDOM]] — Select a random page from the neighbors."
+    },
+    {
+      "type": "paragraph",
+      "id": "16c8189aff87fab0",
+      "text": "[[REPORT]] — Report measurement in place in the item."
+    },
+    {
+      "type": "paragraph",
+      "id": "3718566dc9b0a107",
+      "text": "[[ROSTER]] — Make a Roster for current neighborhood."
+    },
+    {
+      "type": "paragraph",
+      "id": "2089a42393098a3d",
+      "text": "[[SENSOR]] — Read sensor data from a named endpoint."
+    },
+    {
+      "type": "paragraph",
+      "id": "1580d5c85aefaaee",
+      "text": "[[SHOW]] — Add an existing page to the lineup."
+    },
+    {
+      "type": "paragraph",
+      "id": "f23b1693cb1935cf",
+      "text": "[[SLEEP]] — Suspend a sequence of blocks."
+    },
+    {
+      "type": "paragraph",
+      "id": "a511c33dcf6fd1e3",
+      "text": "[[SOLO]] — Launch the Solo plugins pop-up viewer."
+    },
+    {
+      "type": "paragraph",
+      "id": "2ef27430b137893d",
+      "text": "[[SOURCE]] — Read a data source from the lineup."
+    },
+    {
+      "type": "paragraph",
+      "id": "a6ee0eab87f3e07d",
+      "text": "[[TICK]] — Proceed repeatedly once user clicks."
+    },
+    {
+      "type": "paragraph",
+      "id": "be36918c1678f34a",
+      "text": "[[TOGETHER]] — Start all blocks at once."
+    },
+    {
+      "type": "paragraph",
+      "id": "b5bcaa7faf914468",
+      "text": "[[TURN]] — Turn the drawing \"turtle\" to a new direction."
+    },
+    {
+      "type": "paragraph",
+      "id": "8b08d40b0c9bbb1e",
+      "text": "[[UNTIL]] — Stop TICKing one a condition is met."
+    },
+    {
+      "type": "paragraph",
+      "id": "3eb205fc672ddb84",
+      "text": "[[WALK]] ` Explore the neighborhood link graph."
+    },
+    {
+      "type": "paragraph",
+      "id": "caadee975b92db5c",
+      "text": "[[POPUP]] — Open a pop-up window with various contents."
+    },
+    {
+      "type": "markdown",
+      "id": "12d8c48fc2f901ff",
+      "text": "# Server "
+    },
+    {
+      "type": "paragraph",
+      "id": "3253e8bfb73b4f5c",
+      "text": "[[HELLO]] — Add a happy face each time run."
+    },
+    {
+      "type": "paragraph",
+      "id": "26acbfadb4eb7af3",
+      "text": "[[UPTIME]] — Report time server has run."
+    },
+    {
+      "type": "paragraph",
+      "id": "d073181d1c732b21",
+      "text": "[[SLEEP]] — Suspend a sequence of blocks."
+    },
+    {
+      "type": "paragraph",
+      "id": "84a76e762f9b9bce",
+      "text": "[[COMMONS]] — Report image file and byte count."
+    },
+    {
+      "type": "paragraph",
+      "id": "9334b669ce1b2215",
+      "text": "[[DELTA]] — Retrieve recent site chages."
     }
   ],
   "journal": [
@@ -31,25 +196,516 @@
       "date": 1716684802651
     },
     {
+      "type": "fork",
+      "date": 1737950863971
+    },
+    {
       "type": "edit",
       "id": "2802ed0bdf73bd98",
       "item": {
         "type": "paragraph",
         "id": "2802ed0bdf73bd98",
-        "text": "Our work here is just beginning."
+        "text": "Each block is a capitalized word that leads to specific computations, using and updating state passed from block to block, reaching into the federated wiki client and server-side environment, and offering informative messages as they run."
       },
-      "date": 1716684821373
+      "date": 1737951123904
+    },
+    {
+      "type": "edit",
+      "id": "2802ed0bdf73bd98",
+      "item": {
+        "type": "paragraph",
+        "id": "2802ed0bdf73bd98",
+        "text": "Each block is a capitalized word that leads to specific computations. Blocks use and update state passed from block to block. They can reach into the federated wiki client and server-side environment. Expect them to offer informative messages as they run."
+      },
+      "date": 1737951214619
+    },
+    {
+      "item": {
+        "type": "factory",
+        "id": "f7a7b0a6589250e2"
+      },
+      "id": "f7a7b0a6589250e2",
+      "type": "add",
+      "after": "2802ed0bdf73bd98",
+      "date": 1737955007347
+    },
+    {
+      "type": "edit",
+      "id": "f7a7b0a6589250e2",
+      "item": {
+        "type": "paragraph",
+        "id": "f7a7b0a6589250e2",
+        "text": "[[CLICK]] — Offer to proceed once user clicks.\n[[DELTA]] — Apply recent remote site changes.\n[[FILE]] — User selects one of avalable files.\n[[FORWARD]] — Move the drawing \"turtle\" forward.\n[[FROM]] — Read sensor endpoints from a page.\n[[GET]] — Await a result from the server.\n[[HELLO]] — Add a happy face each time run.\n[[KWIC]] — Costruct a Keword-In-Context index.\n[[LINEUP]] — Make a page from current lineup. \n[[LISTEN]] — Wait for a specific message.\n[[MESSAGE]] — Send a specific message.\n[[NEIGHBORS]] — Retrieve avalable neighborhood sitemaps.\n[[PREVIEW]] — Display computed state as a ghost page.\n[[RANDOM]] — Select a random page from the neighbors.\n[[REPORT]] — Report measurement in place in the item.\n[[ROSTER]] — Make a Roster for current neighborhood.\n[[SENSOR]] — Read sensor data from a named endpoint.\n[[SHOW]] — Add an existing page to the lineup.\n[[SLEEP]] — Suspend a sequence of blocks.\n[[SOLO]] — Launch the Solo plugins pop-up viewer.\n[[SOURCE]] — Read a data source from the lineup.\n[[TICK]] — Proceed repeatedly once user clicks.\n[[TOGETHER]] — Start all blocks at once.\n[[TURN]] — Turn the drawing \"turtle\" to a new direction.\n[[UNTIL]] — Stop TICKing one a condition is met.\n[[WALK]] — Explore the neighborhood link graph."
+      },
+      "date": 1737955018511
     },
     {
       "type": "add",
-      "id": "fc6c61ba9968734b",
+      "id": "3253e8bfb73b4f5c",
       "item": {
         "type": "paragraph",
-        "id": "fc6c61ba9968734b",
-        "text": "There are no more blocks yet other than CLICK and HELLO."
+        "id": "3253e8bfb73b4f5c",
+        "text": "[[HELLO]] — Add a happy face each time run.\n[[UPTIME]] — Report time server has run.\n[[SLEEP]] — Suspend a sequence of blocks.\n[[COMMONS]] — Report image file and byte count.\n[[DELTA]] — Retrieve recent site chages."
+      },
+      "after": "f7a7b0a6589250e2",
+      "date": 1737955019109
+    },
+    {
+      "type": "edit",
+      "id": "f7a7b0a6589250e2",
+      "item": {
+        "type": "paragraph",
+        "id": "f7a7b0a6589250e2",
+        "text": "[[CLICK]] — Offer to proceed once user clicks.\n[[DELTA]] — Apply recent remote site changes.\n[[FILE]] — User selects one of avalable files.\n[[FORWARD]] — Move the drawing \"turtle\" forward.\n[[FROM]] — Read sensor endpoints from a page.\n[[GET]] — Await a result from the server.\n[[HELLO]] — Add a happy face each time run.\n[[KWIC]] — Costruct a Keword-In-Context index.\n[[LINEUP]] — Make a page from current lineup. \n[[LISTEN]] — Wait for a specific message.\n[[MESSAGE]] — Send a specific message.\n[[NEIGHBORS]] — Retrieve avalable neighborhood sitemaps.\n[[PREVIEW]] — Display computed state as a ghost page.\n[[RANDOM]] — Select a random page from the neighbors.\n[[REPORT]] — Report measurement in place in the item.\n[[ROSTER]] — Make a Roster for current neighborhood.\n[[SENSOR]] — Read sensor data from a named endpoint.\n[[SHOW]] — Add an existing page to the lineup."
+      },
+      "date": 1737955071434
+    },
+    {
+      "type": "add",
+      "id": "f23b1693cb1935cf",
+      "item": {
+        "type": "paragraph",
+        "id": "f23b1693cb1935cf",
+        "text": "[[SLEEP]] — Suspend a sequence of blocks.\n[[SOLO]] — Launch the Solo plugins pop-up viewer.\n[[SOURCE]] — Read a data source from the lineup.\n[[TICK]] — Proceed repeatedly once user clicks.\n[[TOGETHER]] — Start all blocks at once.\n[[TURN]] — Turn the drawing \"turtle\" to a new direction.\n[[UNTIL]] — Stop TICKing one a condition is met.\n[[WALK]] — Explore the neighborhood link graph."
+      },
+      "after": "f7a7b0a6589250e2",
+      "date": 1737955083134
+    },
+    {
+      "type": "edit",
+      "id": "f7a7b0a6589250e2",
+      "item": {
+        "type": "paragraph",
+        "id": "f7a7b0a6589250e2",
+        "text": "[[CLICK]] — Offer to proceed once user clicks."
+      },
+      "date": 1737955090701
+    },
+    {
+      "type": "add",
+      "id": "becdc6dd737d7f6a",
+      "item": {
+        "type": "paragraph",
+        "id": "becdc6dd737d7f6a",
+        "text": "[[DELTA]] — Apply recent remote site changes."
+      },
+      "after": "f7a7b0a6589250e2",
+      "date": 1737955094636
+    },
+    {
+      "type": "add",
+      "id": "e5dbc564e1d54a41",
+      "item": {
+        "type": "paragraph",
+        "id": "e5dbc564e1d54a41",
+        "text": "[[FILE]] — User selects one of avalable files."
+      },
+      "after": "becdc6dd737d7f6a",
+      "date": 1737955095885
+    },
+    {
+      "type": "add",
+      "id": "1033f16d3f024a47",
+      "item": {
+        "type": "paragraph",
+        "id": "1033f16d3f024a47",
+        "text": "[[FORWARD]] — Move the drawing \"turtle\" forward."
+      },
+      "after": "e5dbc564e1d54a41",
+      "date": 1737955096620
+    },
+    {
+      "type": "add",
+      "id": "abc462d385a0459f",
+      "item": {
+        "type": "paragraph",
+        "id": "abc462d385a0459f",
+        "text": "[[FROM]] — Read sensor endpoints from a page."
+      },
+      "after": "1033f16d3f024a47",
+      "date": 1737955097495
+    },
+    {
+      "type": "add",
+      "id": "e78c3e43a0e8d97a",
+      "item": {
+        "type": "paragraph",
+        "id": "e78c3e43a0e8d97a",
+        "text": "[[GET]] — Await a result from the server."
+      },
+      "after": "abc462d385a0459f",
+      "date": 1737955098464
+    },
+    {
+      "type": "add",
+      "id": "d2ebf84d1e3bddfb",
+      "item": {
+        "type": "paragraph",
+        "id": "d2ebf84d1e3bddfb",
+        "text": "[[HELLO]] — Add a happy face each time run."
+      },
+      "after": "e78c3e43a0e8d97a",
+      "date": 1737955099207
+    },
+    {
+      "type": "add",
+      "id": "52d4f2dc1a544d95",
+      "item": {
+        "type": "paragraph",
+        "id": "52d4f2dc1a544d95",
+        "text": "[[KWIC]] — Costruct a Keword-In-Context index."
+      },
+      "after": "d2ebf84d1e3bddfb",
+      "date": 1737955099879
+    },
+    {
+      "type": "add",
+      "id": "e28130e126f1618a",
+      "item": {
+        "type": "paragraph",
+        "id": "e28130e126f1618a",
+        "text": "[[LINEUP]] — Make a page from current lineup."
+      },
+      "after": "52d4f2dc1a544d95",
+      "date": 1737955100568
+    },
+    {
+      "type": "add",
+      "id": "081c2a7d3832f64d",
+      "item": {
+        "type": "paragraph",
+        "id": "081c2a7d3832f64d",
+        "text": "[[LISTEN]] — Wait for a specific message."
+      },
+      "after": "e28130e126f1618a",
+      "date": 1737955101256
+    },
+    {
+      "type": "add",
+      "id": "8c153cbacbc5990d",
+      "item": {
+        "type": "paragraph",
+        "id": "8c153cbacbc5990d",
+        "text": "[[MESSAGE]] — Send a specific message."
+      },
+      "after": "081c2a7d3832f64d",
+      "date": 1737955101985
+    },
+    {
+      "type": "add",
+      "id": "f57a2887eac58cbd",
+      "item": {
+        "type": "paragraph",
+        "id": "f57a2887eac58cbd",
+        "text": "[[NEIGHBORS]] — Retrieve avalable neighborhood sitemaps."
+      },
+      "after": "8c153cbacbc5990d",
+      "date": 1737955105007
+    },
+    {
+      "type": "add",
+      "id": "acf7d4c9441658f3",
+      "item": {
+        "type": "paragraph",
+        "id": "acf7d4c9441658f3",
+        "text": "[[PREVIEW]] — Display computed state as a ghost page."
+      },
+      "after": "f57a2887eac58cbd",
+      "date": 1737955107781
+    },
+    {
+      "type": "add",
+      "id": "5ad261075a1c1ee1",
+      "item": {
+        "type": "paragraph",
+        "id": "5ad261075a1c1ee1",
+        "text": "[[RANDOM]] — Select a random page from the neighbors."
+      },
+      "after": "acf7d4c9441658f3",
+      "date": 1737955108580
+    },
+    {
+      "type": "add",
+      "id": "16c8189aff87fab0",
+      "item": {
+        "type": "paragraph",
+        "id": "16c8189aff87fab0",
+        "text": "[[REPORT]] — Report measurement in place in the item."
+      },
+      "after": "5ad261075a1c1ee1",
+      "date": 1737955109355
+    },
+    {
+      "type": "add",
+      "id": "3718566dc9b0a107",
+      "item": {
+        "type": "paragraph",
+        "id": "3718566dc9b0a107",
+        "text": "[[ROSTER]] — Make a Roster for current neighborhood.\n[[SENSOR]] — Read sensor data from a named endpoint.\n[[SHOW]] — Add an existing page to the lineup."
+      },
+      "after": "16c8189aff87fab0",
+      "date": 1737955117948
+    },
+    {
+      "type": "edit",
+      "id": "3718566dc9b0a107",
+      "item": {
+        "type": "paragraph",
+        "id": "3718566dc9b0a107",
+        "text": "[[ROSTER]] — Make a Roster for current neighborhood."
+      },
+      "date": 1737955128846
+    },
+    {
+      "type": "add",
+      "id": "2089a42393098a3d",
+      "item": {
+        "type": "paragraph",
+        "id": "2089a42393098a3d",
+        "text": "[[SENSOR]] — Read sensor data from a named endpoint."
+      },
+      "after": "3718566dc9b0a107",
+      "date": 1737955130189
+    },
+    {
+      "type": "add",
+      "id": "1580d5c85aefaaee",
+      "item": {
+        "type": "paragraph",
+        "id": "1580d5c85aefaaee",
+        "text": "[[SHOW]] — Add an existing page to the lineup."
+      },
+      "after": "2089a42393098a3d",
+      "date": 1737955131605
+    },
+    {
+      "type": "edit",
+      "id": "f23b1693cb1935cf",
+      "item": {
+        "type": "paragraph",
+        "id": "f23b1693cb1935cf",
+        "text": "[[SLEEP]] — Suspend a sequence of blocks."
+      },
+      "date": 1737955158899
+    },
+    {
+      "type": "add",
+      "id": "a511c33dcf6fd1e3",
+      "item": {
+        "type": "paragraph",
+        "id": "a511c33dcf6fd1e3",
+        "text": "[[SOLO]] — Launch the Solo plugins pop-up viewer."
+      },
+      "after": "f23b1693cb1935cf",
+      "date": 1737955159886
+    },
+    {
+      "type": "add",
+      "id": "2ef27430b137893d",
+      "item": {
+        "type": "paragraph",
+        "id": "2ef27430b137893d",
+        "text": "[[SOURCE]] — Read a data source from the lineup."
+      },
+      "after": "a511c33dcf6fd1e3",
+      "date": 1737955160735
+    },
+    {
+      "type": "add",
+      "id": "a6ee0eab87f3e07d",
+      "item": {
+        "type": "paragraph",
+        "id": "a6ee0eab87f3e07d",
+        "text": "[[TICK]] — Proceed repeatedly once user clicks."
+      },
+      "after": "2ef27430b137893d",
+      "date": 1737955161336
+    },
+    {
+      "type": "add",
+      "id": "be36918c1678f34a",
+      "item": {
+        "type": "paragraph",
+        "id": "be36918c1678f34a",
+        "text": "[[TOGETHER]] — Start all blocks at once."
+      },
+      "after": "a6ee0eab87f3e07d",
+      "date": 1737955162035
+    },
+    {
+      "type": "add",
+      "id": "b5bcaa7faf914468",
+      "item": {
+        "type": "paragraph",
+        "id": "b5bcaa7faf914468",
+        "text": "[[TURN]] — Turn the drawing \"turtle\" to a new"
+      },
+      "after": "be36918c1678f34a",
+      "date": 1737955162769
+    },
+    {
+      "type": "edit",
+      "id": "b5bcaa7faf914468",
+      "item": {
+        "type": "paragraph",
+        "id": "b5bcaa7faf914468",
+        "text": "[[TURN]] — Turn the drawing \"turtle\" to a new direction."
+      },
+      "date": 1737955172688
+    },
+    {
+      "type": "add",
+      "id": "8b08d40b0c9bbb1e",
+      "item": {
+        "type": "paragraph",
+        "id": "8b08d40b0c9bbb1e",
+        "text": "[[UNTIL]] — Stop TICKing one a condition is met."
+      },
+      "after": "b5bcaa7faf914468",
+      "date": 1737955175542
+    },
+    {
+      "type": "add",
+      "id": "3eb205fc672ddb84",
+      "item": {
+        "type": "paragraph",
+        "id": "3eb205fc672ddb84",
+        "text": "[[WALK]] — Explore the neighborhood link graph."
+      },
+      "after": "8b08d40b0c9bbb1e",
+      "date": 1737955177173
+    },
+    {
+      "type": "add",
+      "id": "12d8c48fc2f901ff",
+      "item": {
+        "type": "paragraph",
+        "id": "12d8c48fc2f901ff",
+        "text": "# Server"
+      },
+      "after": "3eb205fc672ddb84",
+      "date": 1737955197143
+    },
+    {
+      "type": "edit",
+      "id": "12d8c48fc2f901ff",
+      "item": {
+        "type": "markdown",
+        "id": "12d8c48fc2f901ff",
+        "text": "# Server "
+      },
+      "date": 1737955205521
+    },
+    {
+      "type": "add",
+      "id": "ae5a798937198031",
+      "item": {
+        "type": "factory",
+        "id": "ae5a798937198031",
+        "text": "#"
       },
       "after": "2802ed0bdf73bd98",
-      "date": 1716684839583
+      "date": 1737955215871
+    },
+    {
+      "type": "edit",
+      "id": "ae5a798937198031",
+      "item": {
+        "type": "markdown",
+        "id": "ae5a798937198031",
+        "text": "# Client"
+      },
+      "date": 1737955226057
+    },
+    {
+      "type": "edit",
+      "id": "3253e8bfb73b4f5c",
+      "item": {
+        "type": "paragraph",
+        "id": "3253e8bfb73b4f5c",
+        "text": "[[HELLO]] — Add a happy face each time run."
+      },
+      "date": 1737955236723
+    },
+    {
+      "type": "add",
+      "id": "26acbfadb4eb7af3",
+      "item": {
+        "type": "paragraph",
+        "id": "26acbfadb4eb7af3",
+        "text": "[[UPTIME]] — Report time server has run."
+      },
+      "after": "3253e8bfb73b4f5c",
+      "date": 1737955238897
+    },
+    {
+      "type": "add",
+      "id": "d073181d1c732b21",
+      "item": {
+        "type": "paragraph",
+        "id": "d073181d1c732b21",
+        "text": "[[SLEEP]] — Suspend a sequence of blocks."
+      },
+      "after": "26acbfadb4eb7af3",
+      "date": 1737955240076
+    },
+    {
+      "type": "add",
+      "id": "84a76e762f9b9bce",
+      "item": {
+        "type": "paragraph",
+        "id": "84a76e762f9b9bce",
+        "text": "[[COMMONS]] — Report image file and byte count."
+      },
+      "after": "d073181d1c732b21",
+      "date": 1737955240898
+    },
+    {
+      "type": "add",
+      "id": "9334b669ce1b2215",
+      "item": {
+        "type": "paragraph",
+        "id": "9334b669ce1b2215",
+        "text": "[[DELTA]] — Retrieve recent site chages."
+      },
+      "after": "84a76e762f9b9bce",
+      "date": 1737955242542
+    },
+    {
+      "type": "add",
+      "id": "caadee975b92db5c",
+      "item": {
+        "type": "paragraph",
+        "id": "caadee975b92db5c",
+        "text": "[[POPUP]] "
+      },
+      "after": "3eb205fc672ddb84",
+      "date": 1755555787993
+    },
+    {
+      "type": "edit",
+      "id": "3eb205fc672ddb84",
+      "item": {
+        "type": "paragraph",
+        "id": "3eb205fc672ddb84",
+        "text": "[[WALK]] ` Explore the neighborhood link graph."
+      },
+      "date": 1755555798493
+    },
+    {
+      "type": "edit",
+      "id": "caadee975b92db5c",
+      "item": {
+        "type": "paragraph",
+        "id": "caadee975b92db5c",
+        "text": "[[POPUP]] — Open a pop-up window with various contents."
+      },
+      "date": 1755555825874
+    },
+    {
+      "type": "fork",
+      "site": "mech.fed.wiki",
+      "date": 1773425434464
     }
   ]
 }

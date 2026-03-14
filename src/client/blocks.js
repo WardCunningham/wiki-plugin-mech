@@ -46,10 +46,13 @@ export function inspect(elem, key, state) {
       div.insertAdjacentElement('beforeend', look)
     }
     look.querySelector('font').addEventListener('click', event => {
-      const see = document.createElement('div')
-      see.classList.add('see')
+      let see = look.querySelector('.see')
+      if (!see) {
+        see = document.createElement('div')
+        see.classList.add('see')
+        look.insertAdjacentElement('beforeend', see)
+      }
       see.innerText = JSON.stringify(state[key]).substring(0, 400) + ' ...'
-      look.insertAdjacentElement('beforeend', see)
     })
   }
 }
@@ -176,7 +179,7 @@ export function closeTags(html) {
 }
 
 export function reset(elem) {
-  const div = elem.parentElement
+  const div = elem.nextElementSibling
   console.log('reset', div)
   div.querySelectorAll('div.look').forEach(e => (e.innerText = ''))
 }
@@ -342,8 +345,14 @@ function preview_emit({ elem, command, args, state }) {
 
 async function neighbors_emit({ elem, command, args, body, state }) {
   const belem = probe => state.api.element(probe.key)
-  const want = args[0]
-  const have = state.api.neighborhood(want)
+  let have = state.api.neighborhood(args[0])
+  for (let i = 1; i < args.length; i++) have.push(...state.api.neighborhood(args[i]))
+  have = have.filter((s, i) => s.length && !have.slice(0, i).find(e => e[0]?.domain == s[0]?.domain))
+  console.log(
+    'Sites:',
+    have.map(s => s[0]?.domain),
+  )
+
   for (const probe of body || []) {
     if (!probe.command.endsWith(' Survey')) {
       state.api.trouble(belem(probe), `NEIGHBORS expects a Site Survey title, like Pattern Link Survey`)
@@ -368,7 +377,7 @@ async function neighbors_emit({ elem, command, args, body, state }) {
       // console.log({ url, page, survey, todo })
     }
   }
-  state.neighborhood = have.flat().sort((a, b) => b.date - a.date)
+  state.neighborhood = have.flat()
   state.api.status(elem, command, `⇒ ${state.neighborhood.length} pages, ${have.length} sites`)
 }
 
@@ -885,10 +894,10 @@ async function print_emit({ elem, command, args, state }) {
     const hits = tally[counter]
     console.log('explain', counter, explain[counter])
     const hash = s => Math.abs(s.split('').reduce((h, c) => c.charCodeAt(0) + (h << 6) + (h << 16) - h, 0)).toString(16)
-    const keys = Object.keys(hits)
+    const keys = Object.keys(hits).toSorted((a, b) => hits[b].length - hits[a].length)
     if (keys.length) {
       const details = []
-      for (const what in hits) {
+      for (const what of keys) {
         const list = hits[what]
           .filter(uniq)
           .sort()

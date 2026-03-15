@@ -348,11 +348,6 @@ async function neighbors_emit({ elem, command, args, body, state }) {
   let have = state.api.neighborhood(args[0])
   for (let i = 1; i < args.length; i++) have.push(...state.api.neighborhood(args[i]))
   have = have.filter((s, i) => s.length && !have.slice(0, i).find(e => e[0]?.domain == s[0]?.domain))
-  console.log(
-    'Sites:',
-    have.map(s => s[0]?.domain),
-  )
-
   for (const probe of body || []) {
     if (!probe.command.endsWith(' Survey')) {
       state.api.trouble(belem(probe), `NEIGHBORS expects a Site Survey title, like Pattern Link Survey`)
@@ -911,7 +906,11 @@ async function print_emit({ elem, command, args, state }) {
       items.push({ type: 'html', text: details.join('\n ') })
     }
   }
-  const items = []
+  const timestamp = new Date().toString().replace(/ *\(.*\)/, '')
+  const items = [
+    { type: 'paragraph', text: `From ${timestamp}` },
+    { type: 'solo', text: 'INCLUDED', aspects: aspect[0].result },
+  ]
 
   print.push(`<h1>Story</h1>`)
   const clicks = aspect.find(each => each.source.match(/^WALK.*clicks/))

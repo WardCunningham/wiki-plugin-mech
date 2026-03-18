@@ -180,7 +180,6 @@ export function closeTags(html) {
 
 export function reset(elem) {
   const div = elem.nextElementSibling
-  console.log('reset', div)
   div.querySelectorAll('div.look').forEach(e => (e.innerText = ''))
 }
 
@@ -1004,6 +1003,17 @@ async function print_emit({ elem, command, args, state }) {
   }
 }
 
+async function code_emit({ elem, command, args, state }) {
+  const key = state.api.thisLineupKey(elem)
+  const pageObject = state.api.lineupAtKey(key)
+  const story = pageObject.getRawPage().story
+  const codes = story.filter(item => item.type == 'code')
+  if (!codes) return state.api.trouble(elem, `CODE expects the Code plugin in use on this page.`)
+  const code = codes[0].text
+  const module = await import(`data:text/javascript;base64,${btoa(code)}`)
+  const result = await module.doit({ elem, command, args, state })
+}
+
 // C A T A L O G
 
 export const blocks = {
@@ -1035,4 +1045,5 @@ export const blocks = {
   SOLO: { emit: solo_emit },
   POPUP: { emit: popup_emit },
   PRINT: { emit: print_emit },
+  CODE: { emit: code_emit },
 }

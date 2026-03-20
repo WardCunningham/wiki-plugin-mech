@@ -1,5 +1,5 @@
 import { tree, format } from './interpreter.js'
-import { api, run } from './blocks.js'
+import { api, run, blocks } from './blocks.js'
 ;('use strict')
 export const uniq = (value, index, self) => self.indexOf(value) === index
 export const delay = time => new Promise(res => setTimeout(res, time))
@@ -34,6 +34,7 @@ function emit($item, item) {
     site: $page.data('site') || window.location.host,
     slug: $page.attr('id'),
     title: $page.data('data').title,
+    blocks: Object.keys(blocks),
   }
   const state = { context, api }
   $item.append(`<div style="background-color:#eee;padding:15px;border-top:8px;">${html}</div>`)

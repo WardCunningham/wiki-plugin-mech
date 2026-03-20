@@ -51,8 +51,10 @@ export function inspect(elem, key, state) {
         see = document.createElement('div')
         see.classList.add('see')
         look.insertAdjacentElement('beforeend', see)
+        see.innerText = JSON.stringify(state[key]).substring(0, 400) + ' ...'
+      } else {
+        see.remove()
       }
-      see.innerText = JSON.stringify(state[key]).substring(0, 400) + ' ...'
     })
   }
 }
@@ -1009,9 +1011,22 @@ async function code_emit({ elem, command, args, state }) {
   const story = pageObject.getRawPage().story
   const codes = story.filter(item => item.type == 'code')
   if (!codes) return state.api.trouble(elem, `CODE expects the Code plugin in use on this page.`)
-  const code = codes[0].text
-  const module = await import(`data:text/javascript;base64,${btoa(code)}`)
-  const result = await module.doit({ elem, command, args, state })
+  const code = codes.map(item => item.text).join('\n')
+  const way = args.length ? args[0] : 'default'
+  const handler = {
+    get(target, prop) {
+      state.api.inspect(elem, prop, target)
+      return target[prop]
+    },
+  }
+  try {
+    const module = await import(`data:text/javascript;base64,${btoa(code)}`)
+    const proxy = new Proxy(state, handler)
+    const result = await module[way].apply(proxy, args.slice(1))
+    if (typeof result != 'undefined') state.api.status(elem, command, ` ⇒ ${result}`)
+  } catch ({ message }) {
+    return api.trouble(elem, message)
+  }
 }
 
 // C A T A L O G

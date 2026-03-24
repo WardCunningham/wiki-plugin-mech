@@ -262,10 +262,14 @@ function sensor_emit({ elem, command, args, body, state }) {
   })
 }
 
-function report_emit({ elem, command, state }) {
-  const value = state?.temperature
-  if (!value) return state.api.trouble(elem, `Expect data, as from SENSOR.`)
-  state.api.inspect(elem, 'temperature', state)
+function report_emit({ elem, command, args, state }) {
+  const key = args[0] || 'temperature'
+  if (!(key in state)) return state.api.trouble(elem, `Expect "${key}" in state`)
+  const value = state[key]
+  const type = typeof value
+  if (!['string', 'number'].includes(type))
+    return state.api.trouble(elem, `Expect state.${key} to be a string or number`)
+  state.api.inspect(elem, key, state)
   state.api.response(elem, `<br><font face=Arial size=32>${value}</font>`)
 }
 
@@ -325,6 +329,7 @@ function preview_emit({ elem, command, args, state }) {
       case 'page':
         if (!('page' in state)) return state.api.trouble(elem, `"page" preview expects "page" state, like from "FROM".`)
         state.api.inspect(elem, 'page', state)
+        if (args.length == 1) return state.api.showResult(elem, state.page)
         story.push(...state.page.story)
         break
       case 'synopsis':
@@ -554,9 +559,9 @@ function file_emit({ elem, command, args, body, state }) {
       .then(res => res.text())
       .then(text => {
         elem.innerHTML = command + ` ⇒ ${text.length} bytes`
-        state.tsv = text
-        // console.log({ text })
-        run(body, state)
+        const prop = {}
+        prop[suffix] = text
+        run(body, Object.assign(prop, state))
       })
   })
 }
@@ -844,15 +849,18 @@ async function solo_emit({ elem, command, state }) {
 }
 
 function popup_emit({ elem, args, state }) {
+  const expand = text => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const html = []
   switch (args[0]) {
     case 'state':
       for (const key in state) {
+        let value = state[key]
+        if (typeof value != 'string') value = JSON.stringify(state[key], null, 2)
         html.push(
           `<details>
-          <summary>${key}</summary>
-          <pre>${JSON.stringify(state[key], null, 2)}</pre>
-        </details>`,
+            <summary>${key}</summary>
+            <pre style="white-space: pre-wrap;">${expand(value)}</pre>
+          </details>`,
         )
       }
       break
@@ -1015,6 +1023,7 @@ async function code_emit({ elem, command, args, state }) {
   const way = args.length ? args[0] : 'default'
   const handler = {
     get(target, prop) {
+      if (prop == 'api') return undefined
       state.api.inspect(elem, prop, target)
       return target[prop]
     },
@@ -1022,6 +1031,7 @@ async function code_emit({ elem, command, args, state }) {
   try {
     const module = await import(`data:text/javascript;base64,${btoa(code)}`)
     const proxy = new Proxy(state, handler)
+    proxy.response = text => state.api.response(elem, text)
     const result = await module[way].apply(proxy, args.slice(1))
     if (typeof result != 'undefined') state.api.status(elem, command, ` ⇒ ${result}`)
   } catch ({ message }) {

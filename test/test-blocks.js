@@ -152,7 +152,7 @@ const api = {
     it('trouble REPORT', async () => {
       await setup('REPORT')
       var result = api.log.join('|').replaceAll(tags, '<$1>')
-      expect(result).to.be('trouble Expect data')
+      expect(result).to.be('trouble Expect "temperature"')
     })
 
     it('trouble FROM', async () => {
@@ -223,7 +223,7 @@ const api = {
       const page = { title: 'Map Page', story }
       const context = { title: 'Testing Sensor Mech', itemId: '084QIWEO' }
       await setup('PREVIEW page', { context, page })
-      expect(api.log.join('|').replaceAll(tags, '')).to.be('show Mech Preview')
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('show Map Page')
     })
     it('trouble PREVIEW foobar', async () => {
       const context = { title: 'Testing Sensor Mech', itemId: '923EDSVS' }

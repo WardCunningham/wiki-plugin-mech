@@ -855,6 +855,7 @@ function popup_emit({ elem, args, state }) {
     case 'state':
       for (const key in state) {
         let value = state[key]
+        if (value == null) continue
         if (typeof value != 'string') value = JSON.stringify(state[key], null, 2)
         html.push(
           `<details>
@@ -1021,9 +1022,20 @@ async function code_emit({ elem, command, args, state }) {
   if (!codes) return state.api.trouble(elem, `CODE expects the Code plugin in use on this page.`)
   const code = codes.map(item => item.text).join('\n')
   const way = args.length ? args[0] : 'default'
+  const api = {
+    trouble(message) {
+      state.api.trouble(elem, message)
+    },
+    response(text) {
+      state.api.response(elem, text)
+    },
+    status(text) {
+      state.api.status(elem, command, text)
+    },
+  }
   const handler = {
     get(target, prop) {
-      if (prop == 'api') return undefined
+      if (prop == 'api') return api
       state.api.inspect(elem, prop, target)
       return target[prop]
     },
@@ -1031,11 +1043,10 @@ async function code_emit({ elem, command, args, state }) {
   try {
     const module = await import(`data:text/javascript;base64,${btoa(code)}`)
     const proxy = new Proxy(state, handler)
-    proxy.response = text => state.api.response(elem, text)
     const result = await module[way].apply(proxy, args.slice(1))
     if (typeof result != 'undefined') state.api.status(elem, command, ` ⇒ ${result}`)
   } catch ({ message }) {
-    return api.trouble(elem, message)
+    return state.api.trouble(elem, message)
   }
 }
 

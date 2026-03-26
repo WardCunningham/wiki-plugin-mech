@@ -93,6 +93,10 @@ const api = {
 
   reset(elem) {},
 
+  report(elem, commad, text) {
+    this.log.push(`report ${text.trim()}`)
+  },
+
   log: [],
   files: [],
   handler: null,
@@ -147,7 +151,7 @@ const api = {
     it('simple REPORT', async () => {
       await setup('REPORT', { temperature: '98.6°F' })
       var result = api.log.join('|').replaceAll(tags, '<$1>')
-      expect(result).to.be('response <br><font>98.6°F</font>')
+      expect(result).to.be('report <br><font>98.6°F</font>')
     })
     it('trouble REPORT', async () => {
       await setup('REPORT')
@@ -172,7 +176,7 @@ const api = {
       api.files.push({ '28FF2E41': 203, '28FF6BCE': 203, '28FF9763': 202 })
       await setup('FROM datalog|_SENSOR garage|__REPORT')
       expect(api.log.join('|').replaceAll(tags, '')).to.be(
-        'status  ⏳|fetch //datalog.json|status  ⌛|status |status  ⏳|fetch http://home.c2.com:8023|status  ⌛|response 54.80°F',
+        'status  ⏳|fetch //datalog.json|status  ⌛|status |status  ⏳|fetch http://home.c2.com:8023|status  ⌛|report 54.80°F',
       )
     })
   })

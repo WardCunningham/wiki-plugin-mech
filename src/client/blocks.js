@@ -24,6 +24,7 @@ export const api = {
   download,
   closeTags,
   reset,
+  report,
 }
 
 export function trouble(elem, message) {
@@ -37,25 +38,25 @@ export function trouble(elem, message) {
 export function inspect(elem, key, state) {
   const div = elem.previousElementSibling
   if (state.debug) {
-    let look = div.querySelector(`.look [data-key="${key}"]`)
+    let look = div.querySelector(`.look[data-key="${key}"]`)
     if (!look) {
       look = document.createElement('div')
       look.classList.add('look')
       look.dataset.key = key
       look.innerHTML = `<font color=gray size=small>${key} ⇒</font>`
       div.insertAdjacentElement('beforeend', look)
+      look.querySelector('font').addEventListener('click', event => {
+        let see = look.querySelector('.see')
+        if (!see) {
+          see = document.createElement('div')
+          see.classList.add('see')
+          look.insertAdjacentElement('beforeend', see)
+          see.innerText = JSON.stringify(state[key]).substring(0, 400) + ' ...'
+        } else {
+          see.remove()
+        }
+      })
     }
-    look.querySelector('font').addEventListener('click', event => {
-      let see = look.querySelector('.see')
-      if (!see) {
-        see = document.createElement('div')
-        see.classList.add('see')
-        look.insertAdjacentElement('beforeend', see)
-        see.innerText = JSON.stringify(state[key]).substring(0, 400) + ' ...'
-      } else {
-        see.remove()
-      }
-    })
   }
 }
 
@@ -182,7 +183,11 @@ export function closeTags(html) {
 
 export function reset(elem) {
   const div = elem.nextElementSibling
-  div.querySelectorAll('div.look').forEach(e => (e.innerText = ''))
+  div.querySelectorAll('div.look').forEach(e => (e.outerText = ''))
+}
+
+export function report(elem, command, html) {
+  elem.innerHTML = command + html
 }
 
 export async function run(nest, state) {
@@ -270,7 +275,7 @@ function report_emit({ elem, command, args, state }) {
   if (!['string', 'number'].includes(type))
     return state.api.trouble(elem, `Expect state.${key} to be a string or number`)
   state.api.inspect(elem, key, state)
-  state.api.response(elem, `<br><font face=Arial size=32>${value}</font>`)
+  state.api.report(elem, command, `<br><font face=Arial size=32>${value}</font>`)
 }
 
 function source_emit({ elem, command, args, body, state }) {
@@ -448,6 +453,7 @@ function tick_emit({ elem, command, args, body, state }) {
   }
 
   function start(event) {
+    state.api.reset(elem)
     state.debug = event.shiftKey
     state.tick = +count
     status(state.tick)
@@ -1031,6 +1037,9 @@ async function code_emit({ elem, command, args, state }) {
     },
     status(text) {
       state.api.status(elem, command, text)
+    },
+    report(text) {
+      state.api.report(elem, command, text)
     },
   }
   const handler = {

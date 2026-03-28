@@ -38,6 +38,7 @@ export function trouble(elem, message) {
 export function inspect(elem, key, state) {
   const div = elem.previousElementSibling
   if (state.debug) {
+    elem.sample = state[key] // proper lifetime and indirection
     let look = div.querySelector(`.look[data-key="${key}"]`)
     if (!look) {
       look = document.createElement('div')
@@ -51,7 +52,7 @@ export function inspect(elem, key, state) {
           see = document.createElement('div')
           see.classList.add('see')
           look.insertAdjacentElement('beforeend', see)
-          see.innerText = JSON.stringify(state[key]).substring(0, 400) + ' ...'
+          see.innerText = JSON.stringify(elem.sample).substring(0, 400) + ' ...'
         } else {
           see.remove()
         }
@@ -166,6 +167,8 @@ export function host() {
 }
 
 export function download(string, file, mime = 'text/json') {
+  // const blob = new Blob([string], { type: mimeType }); // untested alternative?
+  // const data = URL.createObjectURL(blob);
   var data = `data:${mime};charset=utf-8,` + encodeURIComponent(string)
   var anchor = document.createElement('a')
   anchor.setAttribute('href', data)
@@ -1059,6 +1062,26 @@ async function code_emit({ elem, command, args, state }) {
   }
 }
 
+async function download_emit({ elem, command, args, state }) {
+  // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types/Common_types
+  const types = {
+    txt: 'text/plain',
+    html: 'text/html',
+    csv: 'text/csv',
+    tsv: 'text/tsv',
+    json: 'application/json',
+  }
+  if (!args.length) return state.api.trouble(elem, `DOWNLOAD expects an argument, a file name to use when downloaded.`)
+  const m = args[0].match(/^.+\.(txt|html|csv|tsv|json)$/)
+  console.log(m)
+  if (!m) return state.api.trouble(elem, `DOWNLOAD expects a familiar suffix, one of txt, html, csv, tsv, or json.`)
+  const [file, suffix] = m
+  if (!(suffix in state)) return state.api.trouble(elem, `DOWNLOAD expects to find "${suffix}" in state.`)
+  const string = state[suffix]
+  state.api.status(elem, command, ` ⇒ ${string.length} bytes`)
+  state.api.download(string, file, types[suffix])
+}
+
 // C A T A L O G
 
 export const blocks = {
@@ -1091,4 +1114,5 @@ export const blocks = {
   POPUP: { emit: popup_emit },
   PRINT: { emit: print_emit },
   CODE: { emit: code_emit },
+  DOWNLOAD: { emit: download_emit },
 }

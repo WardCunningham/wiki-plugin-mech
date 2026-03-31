@@ -1,0 +1,36 @@
+/* blocks and subtrees */
+.mech span.block {
+  display: block;
+}
+.mech div.body {
+  display: block;
+  padding-left: 15px;
+}
+
+/* trouble found and explained */
+.mech button.trouble {
+  border-width: 0;
+  color: red;
+}
+.mech span.trouble {
+  width: 80%;
+  color: gray;
+}
+
+/* inspect look and seen */
+.mech .see {
+  border: 1px solid black;
+  background-color: #f8f8f8;
+  padding: 8px;
+  color: gray;
+  word-break: break-all;
+}
+
+/* messaging */
+.mech .report {
+  font-family: 'Arial';
+  font-size: 48px;
+}
+.mech .button {
+  border-width: 0;
+}

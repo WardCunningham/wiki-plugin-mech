@@ -77,7 +77,7 @@ describe('api for inline reporting', () => {
   it('status shown', async () => {
     const elem = thing()
     await api.status(elem, 'block', ' ⇒ 100 units')
-    expect(elem.innerHTML).to.be('block ⇒ 100 units')
+    expect(tagged(elem.innerHTML)).to.be('block<span> ⇒ 100 units</span>')
   })
 })
 

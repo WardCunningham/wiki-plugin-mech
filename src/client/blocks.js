@@ -1,5 +1,7 @@
 import { soloListener, apply, requestSourceData, dotify, walks, kwic } from './library.js'
 import { uniq, delay, asSlug } from './mech.js'
+
+// https://github.com/nrn/universal-ticker
 import ticker from 'universal-ticker'
 
 export const api = {
@@ -67,7 +69,7 @@ export function response(elem, html) {
 
 export function button(elem, label, handler) {
   if (!elem.innerHTML.match(/button/)) {
-    response(elem, `<button style="border-width:0;">${label}</button>`)
+    response(elem, `<button class=button>${label}</button>`)
     elem.querySelector('button').addEventListener('click', handler)
   }
 }
@@ -81,7 +83,7 @@ export async function jfetch(url) {
 }
 
 export function status(elem, command, text) {
-  elem.innerHTML = command + text
+  elem.innerHTML = command + `<span class=status>${text}</span>`
 }
 
 export function sourceData(elem, topic) {
@@ -187,6 +189,10 @@ export function closeTags(html) {
 export function reset(elem) {
   const div = elem.nextElementSibling
   div.querySelectorAll('div.look').forEach(e => (e.outerText = ''))
+  div.querySelectorAll('.trouble').forEach(e => (e.outerText = ''))
+  div.querySelectorAll('button.button').forEach(e => (e.outerText = ''))
+  div.querySelectorAll('span.status').forEach(e => (e.outerText = ''))
+  div.querySelectorAll('div.report').forEach(e => (e.outerText = ''))
 }
 
 export function report(elem, command, html) {
@@ -278,7 +284,7 @@ function report_emit({ elem, command, args, state }) {
   if (!['string', 'number'].includes(type))
     return state.api.trouble(elem, `Expect state.${key} to be a string or number`)
   state.api.inspect(elem, key, state)
-  state.api.report(elem, command, `<br><font face=Arial size=32>${value}</font>`)
+  state.api.report(elem, command, `<div class=report>${value}</div>`)
 }
 
 function source_emit({ elem, command, args, body, state }) {

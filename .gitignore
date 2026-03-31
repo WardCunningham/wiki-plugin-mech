@@ -1,7 +1,8 @@
 .DS_Store
 status
 assets
-client/mech.*
+client/mech.js
+client/mech.js.map
 coverage
 node_modules
 npm-debug.log

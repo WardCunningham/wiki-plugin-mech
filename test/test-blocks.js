@@ -151,7 +151,7 @@ const api = {
     it('simple REPORT', async () => {
       await setup('REPORT', { temperature: '98.6°F' })
       var result = api.log.join('|').replaceAll(tags, '<$1>')
-      expect(result).to.be('report <br><font>98.6°F</font>')
+      expect(result).to.be('report <div>98.6°F</div>')
     })
     it('trouble REPORT', async () => {
       await setup('REPORT')

@@ -68,7 +68,7 @@ export function response(elem, html) {
 }
 
 export function button(elem, label, handler) {
-  if (!elem.innerHTML.match(/button/)) {
+  if (!elem.querySelector('button')) {
     response(elem, `<button class=button>${label}</button>`)
     elem.querySelector('button').addEventListener('click', handler)
   }

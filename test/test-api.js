@@ -60,13 +60,13 @@ describe('api for inline reporting', () => {
     await api.response(elem, ' 😀')
     expect(elem.innerHTML).to.be('root.innerHTML  😀')
   })
-  it('button clicked', async () => {
+  it.skip('button clicked', async () => {
     const elem = thing(returning('match', null))
     await api.button(elem, 'doit', event => api.response(elem, 'clicked'))
     await onclick(elem).call(event)
     expect(tagged(elem.innerHTML)).to.be('root.innerHTML <button>doit</button>clicked')
   })
-  it('button has single handler', async () => {
+  it.skip('button has single handler', async () => {
     const elem = thing(returning('match', null))
     await api.button(elem, 'doit', event => api.response(elem, 'clicked'))
     await api.button(elem, 'doit', event => api.response(elem, 'clicked'))

@@ -482,11 +482,12 @@ function tick_emit({ elem, command, args, body, state }) {
 }
 
 function until_emit({ elem, command, args, body, state }) {
-  if (!args.length) return trouble(elem, `UNTIL expects an argument, a word to stop running.`)
-  if (!state.tick) return trouble(elem, `UNTIL expects to indented below an iterator, like TICKS.`)
-  if (!state.aspect) return trouble(elem, `UNTIL expects "aspect", like from WALK.`)
+  if (!args.length) return state.api.trouble(elem, `UNTIL expects an argument, a word to stop running.`)
+  if (!state.tick) return state.api.trouble(elem, `UNTIL expects to indented below an iterator, like TICKS.`)
+  if (!state.aspect) return state.api.trouble(elem, `UNTIL expects "aspect", like from WALK.`)
   inspect(elem, 'aspect', state)
-  elem.innerHTML = command + ` ⇒ ${state.tick}`
+  // elem.innerHTML = command + ` ⇒ ${state.tick}`
+  state.api.status(elem, command, ` ⇒ ${state.tick}`)
   const word = args[0]
   for (const { div, result } of state.aspect)
     for (const { name, graph } of result)
@@ -494,7 +495,8 @@ function until_emit({ elem, command, args, body, state }) {
         if (node.type.includes(word) || node.props.name.includes(word)) {
           if (state.debug) console.log({ div, result, name, graph, node })
           delete state.tick
-          elem.innerHTML += ' done'
+          // elem.innerHTML += ' done'
+          state.api.response(elem, ' done')
           if (body) run(body, state)
           return
         }
@@ -522,7 +524,7 @@ function turn_emit({ elem, command, args, state }) {
 }
 
 function file_emit({ elem, command, args, body, state }) {
-  if (!('assets' in state)) return trouble(elem, `FILE expects state.assets, like from SOURCE assets.`)
+  if (!('assets' in state)) return state.api.trouble(elem, `FILE expects state.assets, like from SOURCE assets.`)
   inspect(elem, 'assets', state)
 
   // [ { "id": "b2d5831168b4706b", "result":
@@ -547,12 +549,12 @@ function file_emit({ elem, command, args, body, state }) {
     .flat(3)
   if (state.debug) console.log({ assets })
 
-  if (args.length < 1) return trouble(elem, `FILE expects an argument, the dot suffix for desired files.`)
-  if (!body?.length) return trouble(elem, 'FILE expects indented blocks to follow.')
+  if (args.length < 1) return state.api.trouble(elem, `FILE expects an argument, the dot suffix for desired files.`)
+  if (!body?.length) return state.api.trouble(elem, 'FILE expects indented blocks to follow.')
   const suffix = args[0]
   const choices = assets.filter(asset => asset.file.endsWith(suffix))
   const flag = choice => `<img width=12 src=${choices[choice].host + '/favicon.png'}>`
-  if (!choices) return trouble(elem, `FILE expects to find an asset with "${suffix}" suffix.`)
+  if (!choices) return state.api.trouble(elem, `FILE expects to find an asset with "${suffix}" suffix.`)
   elem.innerHTML =
     command +
     `<br><div class=choices style="border:1px solid black; background-color:#f8f8f8; padding:8px;" >${choices
@@ -573,7 +575,8 @@ function file_emit({ elem, command, args, body, state }) {
     fetch(url)
       .then(res => res.text())
       .then(text => {
-        elem.innerHTML = command + ` ⇒ ${text.length} bytes`
+        // elem.innerHTML = command + ` ⇒ ${text.length} bytes`
+        state.api.status(elem, command, ` ⇒ ${text.length} bytes`)
         const prop = {}
         prop[suffix] = text
         run(body, Object.assign(prop, state))
@@ -583,8 +586,8 @@ function file_emit({ elem, command, args, body, state }) {
 
 function kwic_emit({ elem, command, args, body, state }) {
   const template = body && body[0]?.command
-  if (template && !template.match(/\$[KW]/)) return trouble(elem, `KWIK expects $K or $W in link prototype.`)
-  if (!('tsv' in state)) return trouble(elem, `KWIC expects a .tsv file, like from ASSETS .tsv.`)
+  if (template && !template.match(/\$[KW]/)) return state.api.trouble(elem, `KWIK expects $K or $W in link prototype.`)
+  if (!('tsv' in state)) return state.api.trouble(elem, `KWIC expects a .tsv file, like from ASSETS .tsv.`)
   inspect(elem, 'tsv', state)
   const prefix = args[0] || 1
   const lines = state.tsv.trim().split(/\n/)
@@ -602,7 +605,8 @@ function kwic_emit({ elem, command, args, body, state }) {
   }
 
   const groups = kwic(prefix, lines, stop)
-  elem.innerHTML = command + ` ⇒ ${lines.length} lines, ${groups.length} groups`
+  // elem.innerHTML = command + ` ⇒ ${lines.length} lines, ${groups.length} groups`
+  state.api.status(elem, command, ` ⇒ ${lines.length} lines, ${groups.length} groups`)
   const link = quote => {
     let line = quote.line
     if (template) {
@@ -623,51 +627,57 @@ function kwic_emit({ elem, command, args, body, state }) {
 }
 
 function show_emit({ elem, command, args, state }) {
-  elem.innerHTML = command
+  // elem.innerHTML = command
+  state.api.status(elem, command, '')
   let site, slug
   if (args.length < 1) {
     if (state.info) {
       inspect(elem, 'info', state)
       site = state.info.domain
       slug = state.info.slug
-      elem.innerHTML = command + ` ⇒ ${state.info.title}`
+      // elem.innerHTML = command + ` ⇒ ${state.info.title}`
+      state.api.status(elem, command, ` ⇒ ${state.info.title}`)
     } else {
-      return trouble(elem, `SHOW expects a slug or site/slug to open in the lineup.`)
+      return state.api.trouble(elem, `SHOW expects a slug or site/slug to open in the lineup.`)
     }
   } else {
     const info = args[0]
     ;[site, slug] = info.includes('/') ? info.split(/\//) : [null, info]
   }
   const lineup = [...document.querySelectorAll('.page')].map(e => e.id)
-  if (lineup.includes(slug)) return trouble(elem, `SHOW expects a page not already in the lineup.`)
+  if (lineup.includes(slug)) return state.api.trouble(elem, `SHOW expects a page not already in the lineup.`)
   const page = elem.closest('.page')
   wiki.doInternalLink(slug, page, site)
 }
 
 function random_emit({ elem, command, state }) {
-  if (!state.neighborhood) return trouble(elem, `RANDOM expected a neighborhood, like from NEIGHBORS.`)
+  if (!state.neighborhood) return state.api.trouble(elem, `RANDOM expected a neighborhood, like from NEIGHBORS.`)
   inspect(elem, 'neighborhood', state)
   const infos = state.neighborhood
   const many = infos.length
   const one = Math.floor(Math.random() * many)
-  elem.innerHTML = command + ` ⇒ ${one} of ${many}`
+  // elem.innerHTML = command + ` ⇒ ${one} of ${many}`
+  state.api.status(elem, command, ` ⇒ ${one} of ${many}`)
   state.info = infos[one]
 }
 
 function sleep_emit({ elem, command, args, body, state }) {
   let count = args[0] || '1'
-  if (!count.match(/^[1-9][0-9]?$/)) return trouble(elem, `SLEEP expects seconds from 1 to 99`)
+  if (!count.match(/^[1-9][0-9]?$/)) return state.api.trouble(elem, `SLEEP expects seconds from 1 to 99`)
   return new Promise(resolve => {
     if (body)
       run(body, state).then(result => {
         if (state.debug) console.log(command, 'children', result)
       })
-    elem.innerHTML = command + ` ⇒ ${count} remain`
+    // elem.innerHTML = command + ` ⇒ ${count} remain`
+    state.api.status(elem, command, ` ⇒ ${count} remain`)
     let clock = setInterval(() => {
-      if (--count > 0) elem.innerHTML = command + ` ⇒ ${count} remain`
+      // if (--count > 0) elem.innerHTML = command + ` ⇒ ${count} remain`
+      if (--count > 0) state.api.status(elem, command, ` ⇒ ${count} remain`)
       else {
         clearInterval(clock)
-        elem.innerHTML = command + ` ⇒ done`
+        // elem.innerHTML = command +
+        state.api.status(elem, command, ` ⇒ done`)
         if (state.debug) console.log(command, 'done')
         resolve()
       }
@@ -676,14 +686,14 @@ function sleep_emit({ elem, command, args, body, state }) {
 }
 
 function together_emit({ elem, command, args, body, state }) {
-  if (!body) return trouble(elem, `TOGETHER expects indented commands to run together.`)
+  if (!body) return state.api.trouble(elem, `TOGETHER expects indented commands to run together.`)
   const children = body.map(child => run([child], state))
   return Promise.all(children)
 }
 
 // http://localhost:3000/plugin/mech/run/testing-mechs-synchronization/5e269010fc81aebe?args=WyJoZWxsbyIsIndvcmxkIl0
 async function get_emit({ elem, command, args, body, state }) {
-  if (!body) return trouble(elem, `GET expects indented commands to run on the server.`)
+  if (!body) return state.api.trouble(elem, `GET expects indented commands to run on the server.`)
   let share = {}
   let where = state.context.site
   if (args.length) {
@@ -693,7 +703,7 @@ async function get_emit({ elem, command, args, body, state }) {
         share[arg] = state[arg]
       } else if (arg.match(/\./)) where = arg
       else {
-        return trouble(elem, `GET expected "${arg}" to name state or site.`)
+        return state.api.trouble(elem, `GET expected "${arg}" to name state or site.`)
       }
     }
   }
@@ -702,50 +712,55 @@ async function get_emit({ elem, command, args, body, state }) {
   const itemId = state.context.itemId
   const query = `mech=${btoa(JSON.stringify(body))}&state=${btoa(JSON.stringify(share))}`
   const url = `//${where}/plugin/mech/run/${slug}/${itemId}?${query}`
-  elem.innerHTML = command + ` ⇒ in progress`
+  // elem.innerHTML = command +
+  state.api.status(elem, command, ` ⇒ in progress`)
   const start = Date.now()
   let result
   try {
     result = await fetch(url).then(res => (res.ok ? res.json() : res.status))
-    if ('err' in result) return trouble(elem, `RUN received error "${result.err}"`)
+    if ('err' in result) return state.api.trouble(elem, `RUN received error "${result.err}"`)
   } catch (err) {
-    return trouble(elem, `RUN failed with "${err.message}"`)
+    return state.api.trouble(elem, `RUN failed with "${err.message}"`)
   }
   state.result = result
   for (const arg of result.mech.flat(9)) {
     const elem = document.getElementById(arg.key)
-    if ('status' in arg) elem.innerHTML = arg.command + ` ⇒ ${arg.status}`
-    if ('trouble' in arg) trouble(elem, arg.trouble)
+    // if ('status' in arg) elem.innerHTML = arg.command + ` ⇒ ${arg.status}`
+    if ('status' in arg) state.api.status(elem, arg.command, ` ⇒ ${arg.status}`)
+    if ('trouble' in arg) state.api.trouble(elem, arg.trouble)
   }
   if ('debug' in result.state) delete result.state.debug
   Object.assign(state, result.state)
   const elapsed = ((Date.now() - start) / 1000).toFixed(3)
-  elem.innerHTML = command + ` ⇒ ${elapsed} seconds`
+  // elem.innerHTML = command + ` ⇒ ${elapsed} seconds`
+  state.api.status(elem, command, ` ⇒ ${elapsed} seconds`)
 }
 
 function delta_emit({ elem, command, args, body, state }) {
   const copy = obj => JSON.parse(JSON.stringify(obj))
   const size = obj => JSON.stringify(obj).length
-  if (args.length < 1) return trouble(elem, `DELTA expects argument, "have" or "apply" on client.`)
-  if (body) return trouble(elem, `DELTA doesn't expect indented input.`)
+  if (args.length < 1) return state.api.trouble(elem, `DELTA expects argument, "have" or "apply" on client.`)
+  if (body) return state.api.trouble(elem, `DELTA doesn't expect indented input.`)
   switch (args[0]) {
     case 'have':
       const edits = state.context.page.journal.filter(item => item.type != 'fork')
       state.recent = edits[edits.length - 1].date
-      elem.innerHTML = command + ` ⇒ ${new Date(state.recent).toLocaleString()}`
+      // elem.innerHTML = command + ` ⇒ ${new Date(state.recent).toLocaleString()}`
+      state.api.status(elem, command, ` ⇒ ${new Date(state.recent).toLocaleString()}`)
       break
     case 'apply':
-      if (!('actions' in state)) return trouble(elem, `DELTA apply expect "actions" as input.`)
+      if (!('actions' in state)) return state.api.trouble(elem, `DELTA apply expect "actions" as input.`)
       inspect(elem, 'actions', state)
       const page = copy(state.context.page)
       const before = size(page)
       for (const action of state.actions) apply(page, action)
       state.page = page
       const after = size(page)
-      elem.innerHTML = command + ` ⇒ ∆ ${(((after - before) / before) * 100).toFixed(1)}%`
+      // elem.innerHTML = command + ` ⇒ ∆ ${(((after - before) / before) * 100).toFixed(1)}%`
+      state.api.status(elem, command, ` ⇒ ∆ ${(((after - before) / before) * 100).toFixed(1)}%`)
       break
     default:
-      trouble(elem, `DELTA doesn't know "${args[0]}".`)
+      state.api.trouble(elem, `DELTA doesn't know "${args[0]}".`)
   }
 }
 
@@ -778,7 +793,7 @@ function lineup_emit({ elem, command, state }) {
 }
 
 function listen_emit({ elem, command, args, state }) {
-  if (args.length < 1) return trouble(elem, `LISTEN expects argument, an action.`)
+  if (args.length < 1) return state.api.trouble(elem, `LISTEN expects argument, an action.`)
   const topic = args[0]
   let recent = Date.now()
   let count = 0
@@ -787,8 +802,8 @@ function listen_emit({ elem, command, args, state }) {
   handler.id = elem.id
   window.addEventListener('message', listen)
   $('.main').on('thumb', (evt, thumb) => console.log('jquery', { evt, thumb }))
-  elem.innerHTML = command + ` ⇒ ready`
-
+  // elem.innerHTML = command + ` ⇒ ready`
+  state.api.status(elem, command, ` ⇒ ready`)
   // window.listeners = (action=null) => {
   //   return getEventListeners(window).message
   //     .map(t => t.listener)
@@ -807,7 +822,8 @@ function listen_emit({ elem, command, args, state }) {
         const now = Date.now()
         const elapsed = now - recent
         recent = now
-        elem.innerHTML = command + ` ⇒ ${count} events, ${elapsed} ms`
+        // elem.innerHTML = command + ` ⇒ ${count} events, ${elapsed} ms`
+        state.api.status(elem, command, ` ⇒ ${count} events, ${elapsed} ms`)
       } else {
         window.removeEventListener('message', listen)
       }
@@ -816,7 +832,7 @@ function listen_emit({ elem, command, args, state }) {
 }
 
 function message_emit({ elem, command, args, state }) {
-  if (args.length < 1) return trouble(elem, `MESSAGE expects argument, an action.`)
+  if (args.length < 1) return state.api.trouble(elem, `MESSAGE expects argument, an action.`)
   const topic = args[0]
   const message = {
     action: 'publishSourceData',
@@ -824,19 +840,22 @@ function message_emit({ elem, command, args, state }) {
     name: topic,
   }
   window.postMessage(message, '*')
-  elem.innerHTML = command + ` ⇒ sent`
+  // elem.innerHTML = command + ` ⇒ sent`
+  state.api.status(elem, command, ` ⇒ sent`)
 }
 
 async function solo_emit({ elem, command, state }) {
-  if (!('aspect' in state)) return trouble(elem, `"SOLO" expects "aspect" state, like from "WALK".`)
+  if (!('aspect' in state)) return state.api.trouble(elem, `"SOLO" expects "aspect" state, like from "WALK".`)
   inspect(elem, 'aspect', state)
-  elem.innerHTML = command
+  // elem.innerHTML = command
+  state.api.status(elem, command, '')
   const todo = state.aspect.map(each => ({
     source: each.source || each.id,
     aspects: each.result,
   }))
   const aspects = todo.reduce((sum, each) => sum + each.aspects.length, 0)
-  elem.innerHTML += ` ⇒ ${todo.length} sources, ${aspects} aspects`
+  // elem.innerHTML += ` ⇒ ${todo.length} sources, ${aspects} aspects`
+  state.api.status(elem, command, ` ⇒ ${todo.length} sources, ${aspects} aspects`)
 
   // from Solo plugin, client/solo.js
   const pageKey = elem.closest('.page').dataset.key
@@ -881,14 +900,15 @@ function popup_emit({ elem, args, state }) {
       }
       break
     case 'images':
-      if (!state.commons) return trouble(elem, `POPUP images expects "commons" state, like from "GET" "COMMONS"`)
+      if (!state.commons)
+        return state.api.trouble(elem, `POPUP images expects "commons" state, like from "GET" "COMMONS"`)
       const where = args[1] == 'all' ? state.commons.all : state.commons.here
       for (const item of where.items) {
         html.push(`<span><img height=200 src=/assets/plugins/image/${item}></span>`)
       }
       break
     default:
-      return trouble(elem, `POPUP doesn't know "${args[0]}".`)
+      return state.api.trouble(elem, `POPUP doesn't know "${args[0]}".`)
   }
   wiki.dialog(elem.innerText, html.join('\n'))
 }

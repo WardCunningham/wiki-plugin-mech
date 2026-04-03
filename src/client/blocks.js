@@ -40,7 +40,7 @@ export function trouble(elem, message) {
 export function inspect(elem, key, state) {
   const div = elem.previousElementSibling
   if (state.debug) {
-    elem.sample = state[key] // proper lifetime and indirection
+    elem['sample-' + key] = state[key] // proper lifetime and indirection
     let look = div.querySelector(`.look[data-key="${key}"]`)
     if (!look) {
       look = document.createElement('div')
@@ -54,7 +54,7 @@ export function inspect(elem, key, state) {
           see = document.createElement('div')
           see.classList.add('see')
           look.insertAdjacentElement('beforeend', see)
-          see.innerText = JSON.stringify(elem.sample).substring(0, 400) + ' ...'
+          see.innerText = JSON.stringify(elem['sample-' + key]).substring(0, 400) + ' ...'
         } else {
           see.remove()
         }
@@ -338,7 +338,22 @@ function preview_emit({ elem, command, args, state }) {
         if (!('items' in state))
           return state.api.trouble(elem, `"graph" preview expects "items" state, like from "KWIC".`)
         state.api.inspect(elem, 'items', state)
-        story.push(...state.items)
+        const beit = item => {
+          switch (typeof item) {
+            case 'object':
+              if ('type' in item) return item
+              else return beit(item.toString())
+            case 'function':
+              return beit(item())
+            case 'string':
+              if (item.charAt(0) == '<') return { type: 'html', text: item }
+              if (item.match(/^https?:/i)) return { type: 'frame', text: item }
+            default:
+              return { type: 'paragraph', text: item.toString() }
+          }
+        }
+        const items = state.items.map(beit)
+        story.push(...items)
         break
       case 'page':
         if (!('page' in state)) return state.api.trouble(elem, `"page" preview expects "page" state, like from "FROM".`)

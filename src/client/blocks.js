@@ -336,7 +336,7 @@ function preview_emit({ elem, command, args, state }) {
         break
       case 'items':
         if (!('items' in state))
-          return state.api.trouble(elem, `"graph" preview expects "items" state, like from "KWIC".`)
+          return state.api.trouble(elem, `"items" preview expects "items" state, like from "KWIC".`)
         state.api.inspect(elem, 'items', state)
         const beit = item => {
           switch (typeof item) {
@@ -1118,7 +1118,7 @@ async function download_emit({ elem, command, args, state }) {
   if (!m) return state.api.trouble(elem, `DOWNLOAD expects a familiar suffix, one of txt, html, csv, tsv, or json.`)
   const [file, suffix] = m
   if (!(suffix in state)) return state.api.trouble(elem, `DOWNLOAD expects to find "${suffix}" in state.`)
-  const string = state[suffix]
+  const string = suffix == 'json' ? JSON.stringify(state.json) : state[suffix]
   state.api.status(elem, command, ` ⇒ ${string.length} bytes`)
   state.api.download(string, file, types[suffix])
 }

@@ -1,5 +1,6 @@
 import { soloListener, apply, requestSourceData, dotify, walks, kwic } from './library.js'
 import { uniq, delay, asSlug } from './mech.js'
+import { Graph } from './graph/graph.js'
 
 // https://github.com/nrn/universal-ticker
 import ticker from 'universal-ticker'
@@ -1084,6 +1085,9 @@ async function code_emit({ elem, command, args, state }) {
     },
     report(text) {
       state.api.report(elem, command, text)
+    },
+    graph(nodes = [], rels = []) {
+      return new Graph(nodes, rels)
     },
   }
   const handler = {

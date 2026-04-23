@@ -1,4 +1,5 @@
 import { uniq, delay, asSlug } from './mech.js'
+import { Graph } from './graph/graph.js'
 
 // L I B R A R Y
 
@@ -454,39 +455,6 @@ export function kwic(prefix, lines, stop) {
       .split(/[^a-zA-Z]+/)
       .filter(word => word.length > 3 && !stop.has(word.toLowerCase()))
     return words.map(word => ({ word, line, key }))
-  }
-}
-
-// adapted from graph/src/graph.js
-export class Graph {
-  constructor(nodes = [], rels = []) {
-    this.nodes = nodes
-    this.rels = rels
-  }
-
-  addNode(type, props = {}) {
-    const obj = { type, in: [], out: [], props }
-    this.nodes.push(obj)
-    return this.nodes.length - 1
-  }
-
-  addUniqNode(type, props = {}) {
-    const nid = this.nodes.findIndex(node => node.type == type && node.props?.name == props?.name)
-    return nid >= 0 ? nid : this.addNode(type, props)
-  }
-
-  addRel(type, from, to, props = {}) {
-    const obj = { type, from, to, props }
-    this.rels.push(obj)
-    const rid = this.rels.length - 1
-    this.nodes[from].out.push(rid)
-    this.nodes[to].in.push(rid)
-    return rid
-  }
-
-  stringify(...args) {
-    const obj = { nodes: this.nodes, rels: this.rels }
-    return JSON.stringify(obj, ...args)
   }
 }
 

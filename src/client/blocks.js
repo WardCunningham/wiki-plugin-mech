@@ -1102,7 +1102,18 @@ async function code_emit({ elem, command, args, state }) {
     const proxy = new Proxy(state, handler)
     const result = await module[way].apply(proxy, args.slice(1))
     if (typeof result != 'undefined') state.api.status(elem, command, ` ⇒ ${result}`)
-  } catch ({ message }) {
+  } catch (err) {
+    let lines = code.split(/\n/)
+    let listing = lines.map((line, i) => `${i + 1} ${line}`).join('\n')
+    let message = err.message
+    let ln = err.line ?? err.lineNumber
+    let cn = err.columnNumber
+    if (ln) {
+      let line = lines[ln - 1]
+      if (cn)
+        message += `<span class=code>${line.substring(0, cn - 1)}<font color=red>x</font>${line.substring(cn - 1)}</span>`
+      else message += `<span class=code>${line}</span>`
+    }
     return state.api.trouble(elem, message)
   }
 }

@@ -16,6 +16,15 @@
   width: 80%;
   color: gray;
 }
+.mech span.trouble span.code {
+  display: block;
+  background-color: #f8f8f8;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  font-family: monospace;
+  white-space: break-spaces;
+  overflow-wrap: break-word;
+}
 
 /* inspect look and seen */
 .mech .see {

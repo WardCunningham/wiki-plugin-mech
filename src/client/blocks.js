@@ -1099,6 +1099,7 @@ async function code_emit({ elem, command, args, state }) {
   }
   try {
     const module = await import(`data:text/javascript;base64,${btoa(code)}`)
+    if (!(way in module)) return api.trouble(`Expected export of function "${way}".`)
     const proxy = new Proxy(state, handler)
     const result = await module[way].apply(proxy, args.slice(1))
     if (typeof result != 'undefined') state.api.status(elem, command, ` ⇒ ${result}`)
@@ -1111,7 +1112,7 @@ async function code_emit({ elem, command, args, state }) {
     if (ln) {
       let line = lines[ln - 1]
       if (cn)
-        message += `<span class=code>${line.substring(0, cn - 1)}<font color=red>x</font>${line.substring(cn - 1)}</span>`
+        message += `<span class=code>${line.substring(0, cn - 1)}<font color=red>✖︎</font>${line.substring(cn - 1)}</span>`
       else message += `<span class=code>${line}</span>`
     }
     return state.api.trouble(elem, message)

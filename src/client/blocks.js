@@ -28,6 +28,7 @@ export const api = {
   closeTags,
   reset,
   report,
+  ago,
 }
 
 export function trouble(elem, message) {
@@ -200,6 +201,26 @@ export function report(elem, command, html) {
   elem.innerHTML = command + html
 }
 
+export function ago(then, now = Date.now()) {
+  let sign = then > now ? '-' : ''
+  let msec = Math.abs(now - then)
+  let sec = Math.floor(msec / 1000)
+  if (sec < 2) return `${sign}${msec} msec`
+  let min = Math.floor(sec / 60)
+  if (min < 2) return `${sign}${sec} seconds`
+  let hour = Math.floor(min / 60)
+  if (hour < 2) return `${sign}${min} minutes`
+  let day = Math.floor(hour / 24)
+  if (day < 2) return `${sign}${hour} hours`
+  let week = Math.floor(day / 7)
+  if (week < 2) return `${sign}${day} days`
+  let month = Math.floor(day / 30)
+  if (month < 2) return `${sign}${week} weeks`
+  let year = Math.floor(day / 365)
+  if (year < 2) return `${sign}${month} months`
+  return `${sign}${year} years`
+}
+
 export async function run(nest, state) {
   const scope = nest.slice()
   while (scope.length) {
@@ -240,12 +261,16 @@ function hello_emit({ elem, args, state }) {
 async function from_emit({ elem, command, args, body, state }) {
   if (!args[0]) return state.api.trouble(elem, `FROM expects site/slug as way to federated wiki page.`)
   if (!body?.length) return state.api.trouble(elem, `FROM expects indented blocks to follow.`)
-  const url = args[0]
-  state.api.status(elem, command, ' ⏳')
-  const page = await state.api.jfetch(`//${url}.json`)
+  const [a, b] = args[0].split(/\//)
+  const url = b ? `//${a}/${b}.json` : `/${a}.json`
+  const page = await state.api.jfetch(url)
   if (!page) return state.api.trouble(elem, `FROM could not fetch "${url}" `)
   state.page = page
-  state.api.status(elem, command, ' ⌛')
+  const date = page.journal?.findLast(item => item.type != 'fork' && item.date).date
+  if (date) {
+    const age = state.api.ago(date)
+    state.api.status(elem, command, ` ⇒ ${age} old`)
+  }
   run(body, state)
 }
 

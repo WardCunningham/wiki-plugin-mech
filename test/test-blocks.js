@@ -97,6 +97,26 @@ const api = {
     this.log.push(`report ${text.trim()}`)
   },
 
+  ago(then, now = Date.now()) {
+    let sign = then > now ? '-' : ''
+    let msec = Math.abs(now - then)
+    let sec = Math.floor(msec / 1000)
+    if (sec < 2) return `${sign}${msec} msec`
+    let min = Math.floor(sec / 60)
+    if (min < 2) return `${sign}${sec} seconds`
+    let hour = Math.floor(min / 60)
+    if (hour < 2) return `${sign}${min} minutes`
+    let day = Math.floor(hour / 24)
+    if (day < 2) return `${sign}${hour} hours`
+    let week = Math.floor(day / 7)
+    if (week < 2) return `${sign}${day} days`
+    let month = Math.floor(day / 30)
+    if (month < 2) return `${sign}${week} weeks`
+    let year = Math.floor(day / 365)
+    if (year < 2) return `${sign}${month} months`
+    return `${sign}${year} years`
+  },
+
   log: [],
   files: [],
   handler: null,
@@ -165,9 +185,10 @@ const api = {
       expect(api.log.join('|').replaceAll(tags, '')).to.be('trouble expects indented')
     })
     it('simple FROM', async () => {
-      const text = api.files.push({ story: [{}] })
+      api.files.length = 0
+      api.files.push({ story: [{}], journal: [{ type: 'create', date: Date.now() - 5 * 60 * 1000 }] })
       await setup('FROM datalog|_HELLO')
-      expect(api.log.join('|').replaceAll(tags, '')).to.be('status  ⏳|fetch //datalog.json|status  ⌛|response 😀')
+      expect(api.log.join('|').replaceAll(tags, '')).to.be('fetch /datalog.json|status  ⇒ 5 minutes old|response 😀')
     })
 
     it('see Testing Sensor Mech', async () => {
@@ -176,7 +197,7 @@ const api = {
       api.files.push({ '28FF2E41': 203, '28FF6BCE': 203, '28FF9763': 202 })
       await setup('FROM datalog|_SENSOR garage|__REPORT')
       expect(api.log.join('|').replaceAll(tags, '')).to.be(
-        'status  ⏳|fetch //datalog.json|status  ⌛|status |status  ⏳|fetch http://home.c2.com:8023|status  ⌛|report 54.80°F',
+        'fetch /datalog.json|status |status  ⏳|fetch http://home.c2.com:8023|status  ⌛|report 54.80°F',
       )
     })
   })

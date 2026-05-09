@@ -1090,7 +1090,7 @@ async function print_emit({ elem, command, args, state }) {
   }
 }
 
-async function code_emit({ elem, command, args, state }) {
+async function code_emit({ elem, command, args, body, state }) {
   const key = state.api.thisLineupKey(elem)
   const pageObject = state.api.lineupAtKey(key)
   const story = pageObject.getRawPage().story
@@ -1113,6 +1113,9 @@ async function code_emit({ elem, command, args, state }) {
     },
     graph(nodes = [], rels = []) {
       return new Graph(nodes, rels)
+    },
+    body() {
+      return body
     },
   }
   const handler = {

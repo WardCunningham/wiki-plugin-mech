@@ -777,6 +777,48 @@ async function get_emit({ elem, command, args, body, state }) {
   state.api.status(elem, command, ` ⇒ ${elapsed} seconds`)
 }
 
+async function plugin_emit({ elem, command, args, body, state }) {
+  if (!body) return state.api.trouble(elem, `GET expects indented commands to run on the server.`)
+  let share = {}
+  let where
+  if (args.length) {
+    where = args[0]
+    for (const arg of args.slice(1)) {
+      if (arg in state) {
+        inspect(elem, arg, state)
+        share[arg] = state[arg]
+      } else {
+        return state.api.trouble(elem, `GET expected "${arg}" to name state.`)
+      }
+    }
+  } else {
+    return state.api.trouble(elem, `PLUGIN expected a plugin as way to run commands on the server.`)
+  }
+  const itemId = state.context.itemId
+  const query = `mech=${btoa(JSON.stringify(body))}&state=${btoa(JSON.stringify(share))}`
+  const url = `/plugin/${where}/mech?${query}`
+  state.api.status(elem, command, ` ⇒ in progress`)
+  const start = Date.now()
+  let result
+  try {
+    result = await fetch(url).then(res => (res.ok ? res.json() : { err: res.status }))
+    console.log('result', result)
+    if ('err' in result) return state.api.trouble(elem, `PLUGIN received error "${result.err}"`)
+  } catch (err) {
+    return state.api.trouble(elem, `PLUGIN failed with "${err.message}"`)
+  }
+  state.result = result
+  for (const arg of result.mech.flat(9)) {
+    const elem = document.getElementById(arg.key)
+    if ('status' in arg) state.api.status(elem, arg.command, ` ⇒ ${arg.status}`)
+    if ('trouble' in arg) state.api.trouble(elem, arg.trouble)
+  }
+  if ('debug' in result.state) delete result.state.debug
+  Object.assign(state, result.state)
+  const elapsed = ((Date.now() - start) / 1000).toFixed(3)
+  state.api.status(elem, command, ` ⇒ ${elapsed} seconds`)
+}
+
 function delta_emit({ elem, command, args, body, state }) {
   const copy = obj => JSON.parse(JSON.stringify(obj))
   const size = obj => JSON.stringify(obj).length
@@ -1189,6 +1231,7 @@ export const blocks = {
   RANDOM: { emit: random_emit },
   SLEEP: { emit: sleep_emit },
   TOGETHER: { emit: together_emit },
+  PLUGIN: { emit: plugin_emit },
   GET: { emit: get_emit },
   DELTA: { emit: delta_emit },
   ROSTER: { emit: roster_emit },

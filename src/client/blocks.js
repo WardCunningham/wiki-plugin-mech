@@ -1,4 +1,4 @@
-import { soloListener, apply, requestSourceData, dotify, walks, kwic } from './library.js'
+import { soloListener, apply, requestSourceData, dotify, walks, kwic, md } from './library.js'
 import { uniq, delay, asSlug } from './mech.js'
 import { Graph } from './graph/graph.js'
 
@@ -1105,8 +1105,10 @@ async function print_emit({ elem, command, args, state }) {
               'Items of type "paragraph" are expected. Types "markdown" and "html" may show without revision. The remainder appear as only a one-line note.'
             switch (item.type) {
               case 'paragraph':
-              case 'markdown':
                 print.push(`<p ${style}>${expand(item.text)}</p>`)
+                break
+              case 'markdown':
+                print.push(expand(md(item.text)))
                 break
               case 'html':
                 print.push(`<p ${style}>${expand(state.api.closeTags(item.text))}</p>`)

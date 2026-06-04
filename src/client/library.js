@@ -1,5 +1,6 @@
 import { uniq, delay, asSlug } from './mech.js'
 import { Graph } from './graph/graph.js'
+import { marked } from 'marked'
 
 // L I B R A R Y
 
@@ -569,6 +570,35 @@ export function soloListener(event) {
     default:
       console.error({ where: 'soloListener', message: 'unknown action', data })
   }
+}
+
+// adapted from wiki-plugin-markdown
+const renderer = new marked.Renderer()
+renderer.link = ({ href, title, tokens }) => {
+  const text = renderer.parser.parseInline(tokens)
+  const cleanHref = cleanUrl(href)
+  if (cleanHref === null) {
+    return text
+  }
+  href = cleanHref
+  let out = `<a class="external" target="_blank" href="${href}"`
+  if (title) {
+    out += ` title="${escape(title)}"`
+  }
+  out += ` rel="noopener">${text} <img src="/images/external-link-ltr-icon.png"></a>`
+  return out
+}
+const markedOptions = {
+  gfm: true,
+  renderer: renderer,
+  linksInNewTab: true,
+  breaks: true,
+  mangle: false,
+  headerIds: false,
+}
+export function md(text) {
+  const style = `style="width:640px"`
+  return `<div ${style}>${marked.parse(text, markedOptions)}</div>`
 }
 
 export function create(revIndex, data) {

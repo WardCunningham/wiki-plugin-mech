@@ -574,19 +574,26 @@ export function soloListener(event) {
 
 // adapted from wiki-plugin-markdown
 const renderer = new marked.Renderer()
-renderer.link = ({ href, title, tokens }) => {
+// renderer.link = ({ href, title, tokens }) => {
+//   const text = renderer.parser.parseInline(tokens)
+//   const cleanHref = cleanUrl(href)
+//   if (cleanHref === null) {
+//     return text
+//   }
+//   href = cleanHref
+//   let out = `<a class="external" target="_blank" href="${href}"`
+//   if (title) {
+//     out += ` title="${escape(title)}"`
+//   }
+//   out += ` rel="noopener">${text} <img src="/images/external-link-ltr-icon.png"></a>`
+//   return out
+// }
+
+// wiki headings are always h3
+renderer.heading = ({ tokens, depth }) => {
   const text = renderer.parser.parseInline(tokens)
-  const cleanHref = cleanUrl(href)
-  if (cleanHref === null) {
-    return text
-  }
-  href = cleanHref
-  let out = `<a class="external" target="_blank" href="${href}"`
-  if (title) {
-    out += ` title="${escape(title)}"`
-  }
-  out += ` rel="noopener">${text} <img src="/images/external-link-ltr-icon.png"></a>`
-  return out
+  // all sub headings will be level 3
+  return '<h3>' + text + '</h3>'
 }
 const markedOptions = {
   gfm: true,

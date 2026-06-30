@@ -221,7 +221,7 @@ export function ago(then, now = Date.now()) {
   return `${sign}${year} years`
 }
 
-export async function run(nest, state) {
+export async function run(nest, state, initiator) {
   const scope = nest.slice()
   while (scope.length) {
     const code = scope.shift()
@@ -231,7 +231,7 @@ export async function run(nest, state) {
       const [op, ...args] = code.command.split(/ +/)
       const next = scope[0]
       const body = next && 'command' in next ? null : scope.shift()
-      const stuff = { command, op, args, body, elem, state }
+      const stuff = { command, op, args, body, elem, state, initiator }
       if (state.debug) console.log(stuff)
       if (blocks[op]) await blocks[op].emit.apply(null, [stuff])
       else if (op.match(/^[A-Z]+$/)) state.api.trouble(elem, `${op} doesn't name a block we know.`)
@@ -247,7 +247,7 @@ function click_emit({ elem, body, state }) {
   state.api.button(elem, '▶', event => {
     state.api.reset(elem)
     state.debug = event.shiftKey
-    run(body, state)
+    run(body, state, 'click')
   })
 }
 
@@ -511,7 +511,7 @@ function tick_emit({ elem, command, args, body, state }) {
       if (state.debug) console.log({ tick: state.tick, count })
       if ('tick' in state && --state.tick >= 0) {
         status(state.tick)
-        await run(body, state)
+        await run(body, state, 'tick')
       } else {
         clock = clock.api.stop()
         state.tick = outertick
@@ -1134,12 +1134,15 @@ async function print_emit({ elem, command, args, state }) {
   }
 }
 
-async function code_emit({ elem, command, args, body, state }) {
+async function code_emit({ elem, command, args, body, state, initiator }) {
   const key = state.api.thisLineupKey(elem)
   const pageObject = state.api.lineupAtKey(key)
   const story = pageObject.getRawPage().story
   const codes = story.filter(item => item.type == 'code')
+  const owned = window.isOwner && !pageObject.isRemote()
   if (!codes) return state.api.trouble(elem, `CODE expects the Code plugin in use on this page.`)
+  if (!(initiator || owned))
+    return state.api.trouble(elem, `This CODE must be run by CLICK or TICK or owned by the logged in user.`)
   const code = codes.map(item => item.text).join('\n')
   const way = args.length ? args[0] : 'default'
   const api = {

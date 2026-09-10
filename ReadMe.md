@@ -5,6 +5,12 @@ See the Mech Handbook were we describe the building blocks and how they work tog
 
 http://mech.fed.wiki/
 
+## Update
+
+    rm package-lock.json
+    rm -r node_modules
+    npx updtr
+
 ## Build
 
     npm install
@@ -13,4 +19,3 @@ http://mech.fed.wiki/
 ## License
 
 MIT
-

@@ -167,7 +167,7 @@ export function lineupPages(elem) {
 }
 
 export function host() {
-  location.host
+  return location.host
 }
 
 export function download(string, file, mime = 'text/json') {
@@ -594,6 +594,7 @@ function file_emit({ elem, command, args, body, state }) {
   if (!body?.length) return state.api.trouble(elem, 'FILE expects indented blocks to follow.')
   const suffix = args[0]
   const choices = assets.filter(asset => asset.file.endsWith(suffix))
+
   const flag = choice => `<img width=12 src=${choices[choice].host + '/favicon.png'}>`
   if (!choices) return state.api.trouble(elem, `FILE expects to find an asset with "${suffix}" suffix.`)
   elem.innerHTML =
@@ -875,7 +876,7 @@ function lineup_emit({ elem, command, state }) {
   state.items = items
 }
 
-function listen_emit({ elem, command, args, state }) {
+function listen_emit({ elem, command, args, body, state }) {
   if (args.length < 1) return state.api.trouble(elem, `LISTEN expects argument, an action.`)
   const topic = args[0]
   let recent = Date.now()
@@ -883,16 +884,13 @@ function listen_emit({ elem, command, args, state }) {
   const handler = listen
   handler.action = 'publishSourceData'
   handler.id = elem.id
+  if (window.listenBlockListener != null) {
+    window.removeEventListener('message', window.listenBlockListener)
+  }
+  window.listenBlockListener = listen
   window.addEventListener('message', listen)
   $('.main').on('thumb', (evt, thumb) => console.log('jquery', { evt, thumb }))
-  // elem.innerHTML = command + ` ⇒ ready`
   state.api.status(elem, command, ` ⇒ ready`)
-  // window.listeners = (action=null) => {
-  //   return getEventListeners(window).message
-  //     .map(t => t.listener)
-  //     .filter(f => f.name == 'listen')
-  //     .map(f => ({action:f.action,elem:document.getElementById(f.id),count:f.count}))
-  // }
 
   function listen(event) {
     console.log({ event })
@@ -905,10 +903,13 @@ function listen_emit({ elem, command, args, state }) {
         const now = Date.now()
         const elapsed = now - recent
         recent = now
-        // elem.innerHTML = command + ` ⇒ ${count} events, ${elapsed} ms`
         state.api.status(elem, command, ` ⇒ ${count} events, ${elapsed} ms`)
       } else {
         window.removeEventListener('message', listen)
+      }
+      if (body) {
+        state.title = data.title || 'unknown'
+        run(body, state, 'listen')
       }
     }
   }
@@ -927,7 +928,7 @@ function message_emit({ elem, command, args, state }) {
   state.api.status(elem, command, ` ⇒ sent`)
 }
 
-async function solo_emit({ elem, command, state }) {
+async function solo_emit({ elem, command, body, state }) {
   if (!('aspect' in state)) return state.api.trouble(elem, `"SOLO" expects "aspect" state, like from "WALK".`)
   inspect(elem, 'aspect', state)
   // elem.innerHTML = command
@@ -963,9 +964,11 @@ async function solo_emit({ elem, command, state }) {
     console.log('reusing existing dialog')
     popup.postMessage(doing, window.origin)
   }
+  state.status = 'ready'
+  run(body, state, 'solo')
 }
 
-function popup_emit({ elem, args, state }) {
+async function popup_emit({ elem, args, state }) {
   const expand = text => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const html = []
   switch (args[0]) {
@@ -981,7 +984,9 @@ function popup_emit({ elem, args, state }) {
           </details>`,
         )
       }
+      wiki.dialog(elem.innerText, html.join('\n'))
       break
+
     case 'images':
       if (!state.commons)
         return state.api.trouble(elem, `POPUP images expects "commons" state, like from "GET" "COMMONS"`)
@@ -989,11 +994,21 @@ function popup_emit({ elem, args, state }) {
       for (const item of where.items) {
         html.push(`<span><img height=200 src=/assets/plugins/image/${item}></span>`)
       }
+      wiki.dialog(elem.innerText, html.join('\n'))
       break
+
+    case 'traces':
+      if (!state.traces) return state.api.trouble(elem, 'POPUP traces expects state.traces.')
+      const doing = { type: 'batch', traces: state.traces }
+      const popup = window.open(`/plugins/mech/plot.html`, '_blank', 'popup,height=720,width=1280')
+      popup.addEventListener('load', event => {
+        popup.postMessage(doing, window.origin)
+      })
+      break
+
     default:
       return state.api.trouble(elem, `POPUP doesn't know "${args[0]}".`)
   }
-  wiki.dialog(elem.innerText, html.join('\n'))
 }
 
 async function print_emit({ elem, command, args, state }) {
